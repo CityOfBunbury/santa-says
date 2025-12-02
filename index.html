@@ -15,9 +15,9 @@
             <h1 class="game-title">🎅 SANTA SAYS 🎅</h1>
             <h2 class="subtitle">THE DOOM EDITION</h2>
             <div class="instructions">
-                <p>Navigate the Christmas corridors!</p>
+                <p>Navigate the Christmas maze!</p>
                 <p>Only move when <span class="highlight">SANTA SAYS</span>!</p>
-                <p>7 correct moves to reach Santa's Sack!</p>
+                <p>8 correct moves to reach Santa's Sack!</p>
                 <p class="warning">⚠️ Wrong moves trigger TRAPS! ⚠️</p>
             </div>
             <button id="start-btn" class="start-button">START GAME</button>
@@ -33,7 +33,7 @@
         <div id="game-viewport">
             <canvas id="game-canvas"></canvas>
             
-            <!-- Progress indicator -->
+            <!-- Progress indicator (8 moves to navigate the maze) -->
             <div id="progress-bar">
                 <div class="progress-label">Progress to Santa's Sack:</div>
                 <div class="progress-steps">
@@ -43,7 +43,8 @@
                     <span class="step" data-step="4">4</span>
                     <span class="step" data-step="5">5</span>
                     <span class="step" data-step="6">6</span>
-                    <span class="step" data-step="7">🎁</span>
+                    <span class="step" data-step="7">7</span>
+                    <span class="step" data-step="8">🎁</span>
                 </div>
             </div>
         </div>
@@ -82,7 +83,7 @@
                 <div id="timer-display">1:00</div>
             </div>
 
-            <!-- Compass Controls -->
+            <!-- Compass Controls (Forward, Left, Right only - no backward in maze mode) -->
             <div id="compass-controls">
                 <div class="compass-label">CONTROLS</div>
                 <div class="compass">
@@ -101,10 +102,7 @@
                             <span class="label">R</span>
                         </button>
                     </div>
-                    <button class="compass-btn" id="btn-down" data-direction="backward">
-                        <span class="arrow">▼</span>
-                        <span class="label">BACK</span>
-                    </button>
+                    <!-- Backward button removed - maze navigation is forward-only -->
                 </div>
             </div>
         </div>

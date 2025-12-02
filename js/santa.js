@@ -4,6 +4,12 @@
  * Handles Santa's speech, commands, and the "Santa Says" logic
  * including urgency escalation when players don't respond.
  * 
+ * Now context-aware: Santa gives directions that make sense for the maze!
+ * - At corridors: "forward" is the correct move
+ * - At T-junctions: "left" or "right" is the correct move
+ * - "Santa says" prefix means the player SHOULD move
+ * - No prefix means the player should stay still (trap if they move)
+ * 
  * @author Santa Says Game
  */
 
@@ -22,11 +28,10 @@ class SantaController {
         /** @type {HTMLElement} Command text element */
         this.commandText = document.getElementById('santa-command');
         
-        // Direction keywords
+        // Direction keywords - phrases Santa uses for each direction
         /** @type {Object} Maps directions to display text */
         this.directions = {
             forward: ['go FORWARD', 'move FORWARD', 'walk FORWARD', 'step FORWARD'],
-            backward: ['go BACKWARD', 'move BACK', 'turn BACK', 'step BACK'],
             left: ['go LEFT', 'turn LEFT', 'move LEFT', 'head LEFT'],
             right: ['go RIGHT', 'turn RIGHT', 'move RIGHT', 'head RIGHT']
         };
@@ -42,8 +47,11 @@ class SantaController {
         ];
         
         // Current command state
-        /** @type {string|null} The required direction for current command */
+        /** @type {string|null} The direction Santa commanded */
         this.currentDirection = null;
+        
+        /** @type {string|null} The correct direction to advance in the maze */
+        this.correctDirection = null;
         
         /** @type {boolean} Whether current command includes "Santa Says" */
         this.isSantaSays = true;
@@ -69,19 +77,40 @@ class SantaController {
     }
     
     /**
-     * Generate and display a new command
-     * @param {Array} availableDirections - Which directions are valid moves
-     * @returns {Object} Command details {direction, isSantaSays}
+     * Generate and display a new command based on maze context
+     * 
+     * The command generation follows these rules:
+     * - If "Santa says": command the CORRECT direction (the one that advances the maze)
+     * - If NOT "Santa says": command a RANDOM direction (player shouldn't move anyway)
+     * 
+     * This ensures Santa's commands always make sense for maze navigation!
+     * 
+     * @param {string} correctMove - The correct direction to advance ('forward', 'left', 'right')
+     * @param {string[]} availableMoves - All physically possible moves at current location
+     * @returns {Object} Command details {direction, isSantaSays, isCorrectPath}
      */
-    generateCommand(availableDirections = ['forward', 'backward', 'left', 'right']) {
+    generateCommand(correctMove, availableMoves = ['forward']) {
         // Clear any existing urgency timeout
         this.clearUrgency();
         
-        // Pick a random direction from available ones
-        const direction = availableDirections[Math.floor(Math.random() * availableDirections.length)];
+        // Store the correct direction for validation
+        this.correctDirection = correctMove;
         
         // Decide if this is a "Santa Says" command or a trick
         const isSantaSays = Math.random() > this.trickProbability;
+        
+        // Determine which direction Santa will command
+        let direction;
+        if (isSantaSays) {
+            // Santa says the CORRECT direction - player should move this way
+            direction = correctMove;
+        } else {
+            // Trick! Santa says a random direction (doesn't matter which, player shouldn't move)
+            // For T-junctions, pick randomly between left/right
+            // For corridors, just say forward (or mix it up with a wrong direction)
+            const allDirections = ['forward', 'left', 'right'];
+            direction = allDirections[Math.floor(Math.random() * allDirections.length)];
+        }
         
         // Get random phrasing for the direction
         const directionPhrases = this.directions[direction];
@@ -107,7 +136,7 @@ class SantaController {
         if (isSantaSays) {
             this.setupUrgencyEscalation(direction, phrase);
         } else {
-            // For non-Santa Says, set a timeout to generate next command
+            // For non-Santa Says, set a timeout - player should NOT move
             this.urgencyTimeout = setTimeout(() => {
                 if (this.onTimeout) {
                     this.onTimeout('patience');
@@ -117,10 +146,18 @@ class SantaController {
         
         // Notify callback
         if (this.onCommand) {
-            this.onCommand({ direction, isSantaSays });
+            this.onCommand({ direction, isSantaSays, correctMove });
         }
         
-        return { direction, isSantaSays };
+        console.log('Santa command generated:', {
+            direction,
+            correctMove,
+            isSantaSays,
+            shouldPlayerMove: isSantaSays,
+            isCorrectPath: direction === correctMove
+        });
+        
+        return { direction, isSantaSays, isCorrectPath: direction === correctMove };
     }
     
     /**
@@ -206,15 +243,24 @@ class SantaController {
     }
     
     /**
-     * Validate a player's move against current command
-     * @param {string} playerDirection - The direction the player chose
-     * @returns {Object} Result {valid, reason}
+     * Validate a player's move against current command and maze path
+     * 
+     * Validation rules:
+     * 1. If Santa didn't say → ANY movement is wrong (trap: "Santa didn't say!")
+     * 2. If Santa said → player must move in the CORRECT direction (the maze solution)
+     *    - Correct direction → valid, advance through maze
+     *    - Wrong direction → invalid (trap: "Wrong way!")
+     * 
+     * @param {string} playerDirection - The direction the player chose to move
+     * @returns {Object} Result {valid, reason, message}
      */
     validateMove(playerDirection) {
         this.clearUrgency();
         
-        // If it's NOT a "Santa Says" command, ANY move is wrong
+        // Rule 1: If it's NOT a "Santa Says" command, ANY move is wrong
+        // The player should have stayed still!
         if (!this.isSantaSays) {
+            console.log('Validation failed: Santa did not say, but player moved');
             return {
                 valid: false,
                 reason: 'didnt_say',
@@ -222,14 +268,21 @@ class SantaController {
             };
         }
         
-        // Check if direction matches
-        if (playerDirection === this.currentDirection) {
+        // Rule 2: Santa said, so player should move
+        // Check if they moved in the CORRECT direction (the maze solution path)
+        if (playerDirection === this.correctDirection) {
+            console.log('Validation passed: Player moved in correct direction');
             return {
                 valid: true,
                 reason: 'correct',
                 message: 'Good job!'
             };
         } else {
+            // Player moved, but in the wrong direction
+            console.log('Validation failed: Player moved in wrong direction', {
+                playerChose: playerDirection,
+                correctWas: this.correctDirection
+            });
             return {
                 valid: false,
                 reason: 'wrong_direction',
@@ -266,10 +319,12 @@ class SantaController {
     
     /**
      * Reset Santa for new game
+     * Clears all command state and hides the speech bubble
      */
     reset() {
         this.clearUrgency();
         this.currentDirection = null;
+        this.correctDirection = null;
         this.isSantaSays = true;
         this.isUrgent = false;
         this.hideSpeechBubble();

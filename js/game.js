@@ -2,14 +2,232 @@
  * Game.js - Main Game Controller
  * 
  * This is the main game logic file that ties together:
- * - Maze generation (random, 7 steps to win)
- * - Player movement and validation
+ * - Predefined maze with solvable path
+ * - Player movement guided by Santa's commands
  * - Timer management (1 minute hourglass)
  * - Trap animations and game over states
  * - Win condition and code reveal
  * 
  * @author Santa Says Game
  */
+
+// =============================================================================
+// PREDEFINED MAZE STRUCTURE
+// =============================================================================
+
+/**
+ * Predefined maze layout - 15x15 grid
+ * This maze is hand-crafted to provide a solvable path with T-junctions
+ * where Santa can give meaningful left/right directions.
+ * 
+ * Legend:
+ * - 1 = Wall (impassable)
+ * - 0 = Floor (walkable corridor)
+ * 
+ * The maze is designed so the player navigates through corridors and
+ * makes decisions at T-junctions based on Santa's commands.
+ * 
+ * Visual representation of the solution path:
+ * 
+ *   START → → → → → ↓
+ *                   ↓
+ *         ← ← ← ← T1 (T-junction: correct = LEFT)
+ *         ↓
+ *         ↓
+ *         T2 → → → → (T-junction: correct = RIGHT)
+ *                   ↓
+ *                   ↓
+ *         ← ← ← ← T3 (T-junction: correct = LEFT)
+ *         ↓
+ *        END
+ * 
+ * @type {number[][]}
+ */
+const PREDEFINED_MAZE = [
+    //    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
+    /*0*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*1*/ [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // Start corridor (row 1, cols 1-8)
+    /*2*/ [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],  // Corridor continues down
+    /*3*/ [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T-junction 1 (col 8, arms go left to col 3, right to col 11)
+    /*4*/ [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Corridor down from T1 left arm
+    /*5*/ [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Corridor continues
+    /*6*/ [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T-junction 2 (col 3, arms go left to dead end, right to col 11)
+    /*7*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],  // Corridor down from T2 right arm
+    /*8*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],  // Corridor continues
+    /*9*/ [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T-junction 3 (col 11, arms go left to col 3, right to dead end)
+    /*10*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Corridor down to end
+    /*11*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // End area (Santa's Sack)
+    /*12*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*13*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*14*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+];
+
+// =============================================================================
+// SOLUTION PATH / WAYPOINT SYSTEM
+// =============================================================================
+
+/**
+ * Solution path through the maze - defines all waypoints the player must navigate
+ * 
+ * Each waypoint contains:
+ * @property {number} x - Grid X coordinate (column)
+ * @property {number} y - Grid Y coordinate (row)
+ * @property {number} facing - Angle player faces at this waypoint (radians)
+ *                             0 = East, π/2 = South, π = West, -π/2 = North
+ * @property {string} type - Type of location:
+ *                           'start' - Starting position
+ *                           'corridor' - Straight section (forward only)
+ *                           't-junction' - Decision point (left or right)
+ *                           'end' - Final destination (Santa's Sack)
+ * @property {string|null} correctMove - The direction that advances the player:
+ *                                       'forward' - Continue in current direction
+ *                                       'left' - Turn left (counterclockwise) and move
+ *                                       'right' - Turn right (clockwise) and move
+ *                                       null - End of path (no more moves)
+ * @property {string[]} availableMoves - All valid moves at this location
+ *                                       (for T-junctions, both left and right are valid moves,
+ *                                        but only one is the CORRECT path)
+ * 
+ * Direction reference when facing South (π/2):
+ * - LEFT = turn counterclockwise = face East = +X direction
+ * - RIGHT = turn clockwise = face West = -X direction
+ * 
+ * Total: 9 waypoints = 8 moves to win
+ * 
+ * @type {Object[]}
+ */
+const SOLUTION_PATH = [
+    // =========================================================================
+    // Waypoint 0: START
+    // Player begins here, facing East down the first corridor
+    // =========================================================================
+    {
+        x: 1,
+        y: 1,
+        facing: 0,                          // Facing East (angle 0)
+        type: 'start',
+        correctMove: 'forward',             // Move forward to travel the corridor
+        availableMoves: ['forward']         // Only one way to go from start
+    },
+    
+    // =========================================================================
+    // Waypoint 1: End of first corridor (corner)
+    // Player reaches the corner at column 8, auto-oriented to face South
+    // =========================================================================
+    {
+        x: 8,
+        y: 1,
+        facing: Math.PI / 2,                // Facing South (π/2)
+        type: 'corridor',
+        correctMove: 'forward',             // Continue forward (now going south)
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 2: T-JUNCTION 1
+    // First decision point at (8,3) - corridors go East (left) and West (right)
+    // Correct path is RIGHT (West, clockwise turn) toward column 3
+    // =========================================================================
+    {
+        x: 8,
+        y: 3,
+        facing: Math.PI / 2,                // Facing South (arrived from north)
+        type: 't-junction',
+        correctMove: 'right',               // Turn right (clockwise) = face West = go to col 3
+        availableMoves: ['left', 'right']   // Both directions are physically possible
+    },
+    
+    // =========================================================================
+    // Waypoint 3: After T1, at corner
+    // Player turned right (West), now at column 3, auto-oriented to face South
+    // =========================================================================
+    {
+        x: 3,
+        y: 3,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',             // Continue forward (south)
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 4: T-JUNCTION 2
+    // Second decision point at (3,6) - corridors go West (right/dead end) and East (left)
+    // Correct path is LEFT (East, counterclockwise turn) toward column 11
+    // =========================================================================
+    {
+        x: 3,
+        y: 6,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'left',                // Turn left (counterclockwise) = face East = go to col 11
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 5: After T2, at corner
+    // Player turned left (East), now at column 11, auto-oriented to face South
+    // =========================================================================
+    {
+        x: 11,
+        y: 6,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',             // Continue forward (south)
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 6: T-JUNCTION 3
+    // Third decision point at (11,9) - corridors go East (left/dead end) and West (right)
+    // Correct path is RIGHT (West, clockwise turn) toward column 3
+    // =========================================================================
+    {
+        x: 11,
+        y: 9,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'right',               // Turn right (clockwise) = face West = go to col 3
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 7: After T3, at corner
+    // Player turned right (West), now at column 3, auto-oriented to face South
+    // =========================================================================
+    {
+        x: 3,
+        y: 9,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',             // Continue forward (south) to the end
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 8: END - Santa's Sack!
+    // Player has successfully navigated the maze
+    // =========================================================================
+    {
+        x: 3,
+        y: 11,
+        facing: Math.PI / 2,                // Facing South
+        type: 'end',
+        correctMove: null,                  // No more moves - player wins!
+        availableMoves: []
+    }
+];
+
+/**
+ * Maze dimensions
+ * @type {number}
+ */
+const MAZE_WIDTH = 15;
+const MAZE_HEIGHT = 15;
+
+// =============================================================================
+// GAME CLASS
+// =============================================================================
 
 /**
  * Main Game Controller Class
@@ -58,8 +276,8 @@ class Game {
         /** @type {number} Current correct moves in a row */
         this.correctMoves = 0;
         
-        /** @type {number} Required moves to win */
-        this.movesToWin = 7;
+        /** @type {number} Required moves to win (matches SOLUTION_PATH length - 1) */
+        this.movesToWin = 8;
         
         /** @type {boolean} Is player allowed to make a move */
         this.canMove = false;
@@ -137,20 +355,19 @@ class Game {
     
     /**
      * Handle keyboard input
+     * Note: Backward movement is not used in maze navigation mode
      * @param {KeyboardEvent} e - Keyboard event
      */
     handleKeydown(e) {
         if (!this.isPlaying || !this.canMove) return;
         
+        // Map keys to directions (no backward - maze is forward-only)
         const keyMap = {
             'ArrowUp': 'forward',
-            'ArrowDown': 'backward',
             'ArrowLeft': 'left',
             'ArrowRight': 'right',
             'w': 'forward',
             'W': 'forward',
-            's': 'backward',
-            'S': 'backward',
             'a': 'left',
             'A': 'left',
             'd': 'right',
@@ -205,159 +422,123 @@ class Game {
     }
     
     /**
-     * Generate a random maze with a 7-step path to victory
+     * Load the predefined maze structure
+     * Uses the hand-crafted PREDEFINED_MAZE and SOLUTION_PATH constants
+     * to set up a consistent, solvable maze experience.
      */
     generateMaze() {
-        // Create a simple maze structure
-        // We'll generate a path first, then build walls around it
+        // Use the predefined maze layout (deep copy to prevent mutation)
+        this.maze = PREDEFINED_MAZE.map(row => [...row]);
         
-        const width = 15;
-        const height = 15;
+        // Use the predefined solution path (deep copy)
+        this.mazePath = SOLUTION_PATH.map(waypoint => ({ ...waypoint }));
         
-        // Initialize maze with walls
-        this.maze = [];
-        for (let y = 0; y < height; y++) {
-            this.maze[y] = [];
-            for (let x = 0; x < width; x++) {
-                this.maze[y][x] = 1; // 1 = wall
-            }
-        }
-        
-        // Generate a random 7-step path
-        this.mazePath = this.generatePath(width, height);
-        
-        // Carve out the path in the maze
-        this.mazePath.forEach(pos => {
-            this.maze[pos.y][pos.x] = 0; // 0 = floor
-        });
-        
-        // Set player starting position
+        // Set player starting position from the first waypoint
         const start = this.mazePath[0];
         this.player = {
-            x: start.x + 0.5,
-            y: start.y + 0.5,
-            angle: this.getAngleToNext(0)
+            x: start.x + 0.5,           // Center in the grid cell
+            y: start.y + 0.5,           // Center in the grid cell
+            angle: start.facing         // Face the direction defined in the waypoint
         };
+        
+        console.log('Maze loaded:', {
+            mazeSize: `${MAZE_WIDTH}x${MAZE_HEIGHT}`,
+            totalWaypoints: this.mazePath.length,
+            movesToWin: this.movesToWin,
+            startPosition: { x: start.x, y: start.y },
+            startFacing: start.facing
+        });
     }
     
     /**
-     * Generate a random path through the maze
-     * @param {number} width - Maze width
-     * @param {number} height - Maze height
-     * @returns {Array} Array of position objects
+     * Get the current waypoint the player is at
+     * @returns {Object} Current waypoint object from SOLUTION_PATH
      */
-    generatePath(width, height) {
-        const path = [];
-        
-        // Start near the center-left
-        let x = 2;
-        let y = Math.floor(height / 2);
-        
-        path.push({ x, y, direction: null });
-        
-        // Available moves (will create variety)
-        const moves = [
-            { dx: 1, dy: 0, name: 'right' },    // right
-            { dx: 0, dy: -1, name: 'forward' }, // up (forward in game terms)
-            { dx: 0, dy: 1, name: 'backward' }, // down
-            { dx: -1, dy: 0, name: 'left' }     // left
-        ];
-        
-        // Generate 7 steps (positions 1-7, with position 0 being start)
-        for (let step = 0; step < 7; step++) {
-            // Filter valid moves (stay in bounds, don't revisit)
-            const validMoves = moves.filter(move => {
-                const newX = x + move.dx * 2; // Move 2 cells to create corridors
-                const newY = y + move.dy * 2;
-                
-                // Check bounds (leave border for walls)
-                if (newX < 2 || newX >= width - 2 || newY < 2 || newY >= height - 2) {
-                    return false;
-                }
-                
-                // Check if already visited
-                if (path.some(p => p.x === newX && p.y === newY)) {
-                    return false;
-                }
-                
-                return true;
-            });
-            
-            if (validMoves.length === 0) {
-                // Stuck - regenerate (shouldn't happen with this simple approach)
-                console.warn('Path generation stuck, retrying...');
-                return this.generatePath(width, height);
-            }
-            
-            // Pick random valid move
-            const move = validMoves[Math.floor(Math.random() * validMoves.length)];
-            
-            // Add intermediate cell (corridor)
-            const midX = x + move.dx;
-            const midY = y + move.dy;
-            path.push({ x: midX, y: midY, direction: null });
-            
-            // Move to new position
-            x += move.dx * 2;
-            y += move.dy * 2;
-            
-            // Store the direction needed to get here (from previous position)
-            path.push({ x, y, direction: move.name });
-        }
-        
-        return path;
+    getCurrentWaypoint() {
+        return this.mazePath[this.pathIndex];
     }
     
     /**
-     * Get the angle the player should face to see the next path position
+     * Get the next waypoint the player needs to reach
+     * @returns {Object|null} Next waypoint object, or null if at end
+     */
+    getNextWaypoint() {
+        if (this.pathIndex >= this.mazePath.length - 1) {
+            return null;
+        }
+        return this.mazePath[this.pathIndex + 1];
+    }
+    
+    /**
+     * Check if current waypoint is a T-junction
+     * @returns {boolean} True if player is at a T-junction
+     */
+    isAtTJunction() {
+        const waypoint = this.getCurrentWaypoint();
+        return waypoint && waypoint.type === 't-junction';
+    }
+    
+    /**
+     * Get the correct move for the current waypoint
+     * This is the direction that advances the player through the maze
+     * @returns {string|null} 'forward', 'left', 'right', or null if at end
+     */
+    getCorrectMoveForCurrentWaypoint() {
+        const waypoint = this.getCurrentWaypoint();
+        return waypoint ? waypoint.correctMove : null;
+    }
+    
+    /**
+     * Get the angle the player should face at a given path index
+     * Uses the predefined facing value from the waypoint
      * @param {number} pathIndex - Current path index
      * @returns {number} Angle in radians
      */
     getAngleToNext(pathIndex) {
-        if (pathIndex >= this.mazePath.length - 1) return 0;
-        
-        const current = this.mazePath[pathIndex];
-        const next = this.mazePath[pathIndex + 1];
-        
-        const dx = next.x - current.x;
-        const dy = next.y - current.y;
-        
-        return Math.atan2(dy, dx);
+        // Use the facing value defined in the waypoint
+        if (pathIndex < this.mazePath.length) {
+            return this.mazePath[pathIndex].facing;
+        }
+        return 0;
     }
     
     /**
-     * Give Santa's next command based on maze path
+     * Give Santa's next command based on the current waypoint in the maze
+     * 
+     * This is context-aware:
+     * - At corridors: correct move is "forward"
+     * - At T-junctions: correct move is "left" or "right" (whichever solves the maze)
+     * 
+     * Santa will say the correct direction if it's a "Santa says" command,
+     * or a random direction if it's a trick (player shouldn't move anyway).
      */
     giveNextCommand() {
         if (!this.isPlaying) return;
         
-        // Get the next required direction from the path
-        // Find next step with a direction
-        let requiredDirection = null;
-        for (let i = this.pathIndex + 1; i < this.mazePath.length; i++) {
-            if (this.mazePath[i].direction) {
-                requiredDirection = this.mazePath[i].direction;
-                break;
-            }
+        // Get the current waypoint's information
+        const currentWaypoint = this.getCurrentWaypoint();
+        
+        if (!currentWaypoint || !currentWaypoint.correctMove) {
+            // We've reached the end or something went wrong
+            console.warn('No more moves available at current waypoint');
+            return;
         }
         
-        if (!requiredDirection) {
-            requiredDirection = 'forward'; // Default
-        }
+        // Get the correct move for this waypoint (forward, left, or right)
+        const correctMove = currentWaypoint.correctMove;
         
-        // Map internal direction names to what Santa uses
-        const directionMap = {
-            'right': 'right',
-            'left': 'left',
-            'forward': 'forward',
-            'backward': 'backward'
-        };
+        // Get the available moves at this location
+        const availableMoves = currentWaypoint.availableMoves || [correctMove];
         
-        // For variety, let Santa command any direction (but the RIGHT one more often)
-        const availableDirections = ['forward', 'backward', 'left', 'right'];
+        console.log('Generating command for waypoint:', {
+            index: this.pathIndex,
+            type: currentWaypoint.type,
+            correctMove: correctMove,
+            availableMoves: availableMoves
+        });
         
-        // Generate command (Santa controller handles the "Santa Says" probability)
-        this.santa.generateCommand(availableDirections);
+        // Generate command - Santa will use the correct move for "Santa says" commands
+        this.santa.generateCommand(correctMove, availableMoves);
         this.canMove = true;
     }
     
@@ -409,16 +590,28 @@ class Game {
     }
     
     /**
-     * Advance player position along the path
+     * Advance player position to the next waypoint
+     * Each waypoint represents a decision point in the maze
      */
     advancePlayer() {
-        // Move along the maze path
-        this.pathIndex += 2; // Skip corridor cell
+        // Move to the next waypoint
+        this.pathIndex += 1;
+        
         if (this.pathIndex < this.mazePath.length) {
-            const newPos = this.mazePath[this.pathIndex];
-            this.player.x = newPos.x + 0.5;
-            this.player.y = newPos.y + 0.5;
-            this.player.angle = this.getAngleToNext(this.pathIndex);
+            const newWaypoint = this.mazePath[this.pathIndex];
+            
+            // Update player position to the new waypoint
+            this.player.x = newWaypoint.x + 0.5;    // Center in grid cell
+            this.player.y = newWaypoint.y + 0.5;    // Center in grid cell
+            this.player.angle = newWaypoint.facing; // Face the correct direction
+            
+            console.log('Player advanced to waypoint:', {
+                index: this.pathIndex,
+                type: newWaypoint.type,
+                position: { x: newWaypoint.x, y: newWaypoint.y },
+                facing: newWaypoint.facing,
+                nextMove: newWaypoint.correctMove
+            });
         }
     }
     
@@ -492,6 +685,7 @@ class Game {
     
     /**
      * Reset game to starting position
+     * Resets player to the first waypoint of the predefined path
      */
     resetToStart() {
         // Reset state
@@ -500,12 +694,12 @@ class Game {
         this.timeRemaining = this.totalTime;
         this.isPlaying = true;
         
-        // Reset player position
-        const start = this.mazePath[0];
+        // Reset player position to the start waypoint
+        const startWaypoint = this.mazePath[0];
         this.player = {
-            x: start.x + 0.5,
-            y: start.y + 0.5,
-            angle: this.getAngleToNext(0)
+            x: startWaypoint.x + 0.5,       // Center in grid cell
+            y: startWaypoint.y + 0.5,       // Center in grid cell
+            angle: startWaypoint.facing     // Use the waypoint's facing direction
         };
         
         // Reset UI
