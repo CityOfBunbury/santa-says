@@ -72,8 +72,16 @@ class SantaController {
         this.onCommand = null;
         
         // Probability of non-"Santa Says" command (trap)
-        /** @type {number} Chance of trick command (0-1) */
-        this.trickProbability = 0.25;
+        /** @type {number} Chance of trick command (0-1) - 40% chance of a trick */
+        this.trickProbability = 0.40;
+        
+        // Track recent commands to avoid too many tricks in a row
+        /** @type {number} Count of consecutive tricks */
+        this.consecutiveTricks = 0;
+        
+        // Maximum consecutive tricks before forcing a real command
+        /** @type {number} Max tricks in a row */
+        this.maxConsecutiveTricks = 2;
     }
     
     /**
@@ -83,7 +91,10 @@ class SantaController {
      * - If "Santa says": command the CORRECT direction (the one that advances the maze)
      * - If NOT "Santa says": command a RANDOM direction (player shouldn't move anyway)
      * 
-     * This ensures Santa's commands always make sense for maze navigation!
+     * Trick variety:
+     * - Sometimes says the correct direction (tempting!)
+     * - Sometimes says a completely wrong direction
+     * - Never too many tricks in a row (max 2)
      * 
      * @param {string} correctMove - The correct direction to advance ('forward', 'left', 'right')
      * @param {string[]} availableMoves - All physically possible moves at current location
@@ -97,7 +108,22 @@ class SantaController {
         this.correctDirection = correctMove;
         
         // Decide if this is a "Santa Says" command or a trick
-        const isSantaSays = Math.random() > this.trickProbability;
+        // But prevent too many consecutive tricks
+        let isSantaSays;
+        if (this.consecutiveTricks >= this.maxConsecutiveTricks) {
+            // Force a real "Santa says" command after too many tricks
+            isSantaSays = true;
+            this.consecutiveTricks = 0;
+        } else {
+            isSantaSays = Math.random() > this.trickProbability;
+        }
+        
+        // Track consecutive tricks
+        if (!isSantaSays) {
+            this.consecutiveTricks++;
+        } else {
+            this.consecutiveTricks = 0;
+        }
         
         // Determine which direction Santa will command
         let direction;
@@ -105,11 +131,24 @@ class SantaController {
             // Santa says the CORRECT direction - player should move this way
             direction = correctMove;
         } else {
-            // Trick! Santa says a random direction (doesn't matter which, player shouldn't move)
-            // For T-junctions, pick randomly between left/right
-            // For corridors, just say forward (or mix it up with a wrong direction)
-            const allDirections = ['forward', 'left', 'right'];
-            direction = allDirections[Math.floor(Math.random() * allDirections.length)];
+            // Trick! Santa says a direction without "Santa says"
+            // Make it interesting - sometimes use the correct direction (extra tempting!)
+            // Sometimes use a wrong direction
+            const trickType = Math.random();
+            
+            if (trickType < 0.4) {
+                // 40% of tricks: Say the CORRECT direction (very tempting to move!)
+                direction = correctMove;
+            } else if (trickType < 0.7) {
+                // 30% of tricks: Say a random different direction
+                const allDirections = ['forward', 'left', 'right'];
+                const wrongDirections = allDirections.filter(d => d !== correctMove);
+                direction = wrongDirections[Math.floor(Math.random() * wrongDirections.length)];
+            } else {
+                // 30% of tricks: Completely random
+                const allDirections = ['forward', 'left', 'right'];
+                direction = allDirections[Math.floor(Math.random() * allDirections.length)];
+            }
         }
         
         // Get random phrasing for the direction
@@ -121,12 +160,20 @@ class SantaController {
         this.isSantaSays = isSantaSays;
         this.isUrgent = false;
         
-        // Build command text
+        // Build command text with variety
         let commandHTML = '';
         if (isSantaSays) {
+            // Real command - always has "Santa says"
             commandHTML = `<span class="santa-says">🎅 Santa says...</span><span class="direction">${phrase}!</span>`;
         } else {
-            commandHTML = `<span class="direction">${phrase}!</span>`;
+            // Trick command - no "Santa says", but sometimes add urgency to tempt players
+            const trickPhrases = [
+                `<span class="direction">${phrase}!</span>`,
+                `<span class="direction">Quick! ${phrase}!</span>`,
+                `<span class="direction">${phrase} NOW!</span>`,
+                `<span class="direction">Hurry! ${phrase}!</span>`,
+            ];
+            commandHTML = trickPhrases[Math.floor(Math.random() * trickPhrases.length)];
         }
         
         // Display the command (mark as trick if not Santa-says)
@@ -153,8 +200,9 @@ class SantaController {
             direction,
             correctMove,
             isSantaSays,
-            shouldPlayerMove: isSantaSays,
-            isCorrectPath: direction === correctMove
+            isTrick: !isSantaSays,
+            consecutiveTricks: this.consecutiveTricks,
+            shouldPlayerMove: isSantaSays
         });
         
         return { direction, isSantaSays, isCorrectPath: direction === correctMove };
@@ -327,6 +375,7 @@ class SantaController {
         this.correctDirection = null;
         this.isSantaSays = true;
         this.isUrgent = false;
+        this.consecutiveTricks = 0;
         this.hideSpeechBubble();
     }
     

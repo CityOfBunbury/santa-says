@@ -273,11 +273,8 @@ class Game {
         /** @type {boolean} Is the game currently running */
         this.isPlaying = false;
         
-        /** @type {number} Current correct moves in a row */
-        this.correctMoves = 0;
-        
-        /** @type {number} Required moves to win (matches SOLUTION_PATH length - 1) */
-        this.movesToWin = 8;
+        /** @type {number} Current position in the maze path (waypoint index) */
+        this.currentWaypointIndex = 0;
         
         /** @type {boolean} Is player allowed to make a move */
         this.canMove = false;
@@ -396,14 +393,10 @@ class Game {
         this.generateMaze();
         
         // Reset game state
-        this.correctMoves = 0;
         this.pathIndex = 0;
         this.timeRemaining = this.totalTime;
         this.isPlaying = true;
         this.canMove = true;
-        
-        // Update progress display
-        this.updateProgress();
         
         // Show game screen
         this.startScreen.classList.add('hidden');
@@ -444,7 +437,6 @@ class Game {
         console.log('Maze loaded:', {
             mazeSize: `${MAZE_WIDTH}x${MAZE_HEIGHT}`,
             totalWaypoints: this.mazePath.length,
-            movesToWin: this.movesToWin,
             startPosition: { x: start.x, y: start.y },
             startFacing: start.facing
         });
@@ -564,24 +556,23 @@ class Game {
     }
     
     /**
-     * Handle a correct move
+     * Handle a correct move - advance through the maze
      * @param {string} direction - The direction moved
      */
     handleCorrectMove(direction) {
-        this.correctMoves++;
-        this.updateProgress();
-        
         // Animate the walk
         this.raycaster.animateWalk(() => {
-            // Move player forward in the path
+            // Move player to next waypoint
             this.advancePlayer();
         });
         
-        // Check for win
-        if (this.correctMoves >= this.movesToWin) {
+        // Check if player has reached the end of the maze
+        const nextWaypoint = this.getNextWaypoint();
+        if (!nextWaypoint || nextWaypoint.type === 'end') {
+            // Player will reach the end after this move!
             this.handleWin();
         } else {
-            // Give next command after short delay
+            // Continue through the maze
             this.santa.showSuccess('Ho ho ho!');
             setTimeout(() => {
                 this.giveNextCommand();
@@ -623,20 +614,14 @@ class Game {
         if (!this.isPlaying) return;
         
         if (reason === 'patience') {
-            // Player correctly didn't move on non-"Santa Says"
-            this.correctMoves++;
-            this.updateProgress();
-            
-            if (this.correctMoves >= this.movesToWin) {
-                this.handleWin();
-            } else {
-                this.santa.showSuccess('Good patience!');
-                setTimeout(() => {
-                    this.giveNextCommand();
-                }, 1500);
-            }
+            // Player correctly didn't move on non-"Santa Says" command
+            // Good job! But they don't advance - just get the next command
+            this.santa.showSuccess('Good patience!');
+            setTimeout(() => {
+                this.giveNextCommand();
+            }, 1500);
         } else {
-            // Player took too long to move
+            // Player took too long to move on a "Santa Says" command
             this.triggerTrap('timeout', 'TOO SLOW!');
         }
     }
@@ -689,7 +674,6 @@ class Game {
      */
     resetToStart() {
         // Reset state
-        this.correctMoves = 0;
         this.pathIndex = 0;
         this.timeRemaining = this.totalTime;
         this.isPlaying = true;
@@ -703,7 +687,6 @@ class Game {
         };
         
         // Reset UI
-        this.updateProgress();
         this.updateTimerDisplay();
         this.santa.reset();
         
@@ -740,21 +723,6 @@ class Game {
         this.winScreen.classList.add('hidden');
         this.generateMaze();
         this.startGame();
-    }
-    
-    /**
-     * Update progress display
-     */
-    updateProgress() {
-        const steps = document.querySelectorAll('.progress-steps .step');
-        steps.forEach((step, index) => {
-            step.classList.remove('completed', 'current');
-            if (index < this.correctMoves) {
-                step.classList.add('completed');
-            } else if (index === this.correctMoves) {
-                step.classList.add('current');
-            }
-        });
     }
     
     /**

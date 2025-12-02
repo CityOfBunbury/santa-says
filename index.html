@@ -17,7 +17,7 @@
             <div class="instructions">
                 <p>Navigate the Christmas maze!</p>
                 <p>Only move when <span class="highlight">SANTA SAYS</span>!</p>
-                <p>8 correct moves to reach Santa's Sack!</p>
+                <p>Follow Santa's directions to find his Sack!</p>
                 <p class="warning">⚠️ Wrong moves trigger TRAPS! ⚠️</p>
             </div>
             <button id="start-btn" class="start-button">START GAME</button>
@@ -33,19 +33,9 @@
         <div id="game-viewport">
             <canvas id="game-canvas"></canvas>
             
-            <!-- Progress indicator (8 moves to navigate the maze) -->
-            <div id="progress-bar">
-                <div class="progress-label">Progress to Santa's Sack:</div>
-                <div class="progress-steps">
-                    <span class="step" data-step="1">1</span>
-                    <span class="step" data-step="2">2</span>
-                    <span class="step" data-step="3">3</span>
-                    <span class="step" data-step="4">4</span>
-                    <span class="step" data-step="5">5</span>
-                    <span class="step" data-step="6">6</span>
-                    <span class="step" data-step="7">7</span>
-                    <span class="step" data-step="8">🎁</span>
-                </div>
+            <!-- Simple goal indicator - reach the end of the maze! -->
+            <div id="goal-indicator">
+                <span class="goal-text">🎄 Find Santa's Sack! 🎁</span>
             </div>
         </div>
 
