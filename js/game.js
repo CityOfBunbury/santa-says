@@ -16,50 +16,57 @@
 // =============================================================================
 
 /**
- * Predefined maze layout - 15x15 grid
- * This maze is hand-crafted to provide a solvable path with T-junctions
- * where Santa can give meaningful left/right directions.
+ * Predefined maze layout - 20x20 grid
+ * A larger, more complex maze with 6 T-junctions for a longer adventure!
  * 
  * Legend:
  * - 1 = Wall (impassable)
  * - 0 = Floor (walkable corridor)
  * 
- * The maze is designed so the player navigates through corridors and
- * makes decisions at T-junctions based on Santa's commands.
+ * The maze winds through multiple corridors with T-junctions where
+ * Santa guides the player left or right.
  * 
- * Visual representation of the solution path:
- * 
- *   START → → → → → ↓
- *                   ↓
- *         ← ← ← ← T1 (T-junction: correct = LEFT)
- *         ↓
- *         ↓
- *         T2 → → → → (T-junction: correct = RIGHT)
- *                   ↓
- *                   ↓
- *         ← ← ← ← T3 (T-junction: correct = LEFT)
+ * Solution path overview (14 moves, 6 T-junctions):
+ *   START → → → → ↓
+ *                 ↓
+ *                 T1 → → → → ↓ (right)
+ *                           ↓
+ *           ← ← ← ← ← ← ← T2 (left)
+ *           ↓
+ *           T3 → → → → → → ↓ (right)
+ *                         ↓
+ *             ← ← ← ← ← T4 (left)
+ *             ↓
+ *             T5 → → → → ↓ (right)
+ *                       ↓
+ *         ← ← ← ← ← ← T6 (left)
  *         ↓
  *        END
  * 
  * @type {number[][]}
  */
 const PREDEFINED_MAZE = [
-    //    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
-    /*0*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    /*1*/ [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // Start corridor (row 1, cols 1-8)
-    /*2*/ [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],  // Corridor continues down
-    /*3*/ [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T-junction 1 (col 8, arms go left to col 3, right to col 11)
-    /*4*/ [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Corridor down from T1 left arm
-    /*5*/ [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Corridor continues
-    /*6*/ [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T-junction 2 (col 3, arms go left to dead end, right to col 11)
-    /*7*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],  // Corridor down from T2 right arm
-    /*8*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],  // Corridor continues
-    /*9*/ [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T-junction 3 (col 11, arms go left to col 3, right to dead end)
-    /*10*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Corridor down to end
-    /*11*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // End area (Santa's Sack)
-    /*12*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    /*13*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    /*14*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    //    0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
+    /*0*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*1*/ [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Start corridor
+    /*2*/ [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*3*/ [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],  // T1
+    /*4*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1],
+    /*5*/ [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],  // T2
+    /*6*/ [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*7*/ [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T3
+    /*8*/ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+    /*9*/ [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T4
+    /*10*/[1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*11*/[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // T5
+    /*12*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+    /*13*/[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // T6
+    /*14*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*15*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*16*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Final corridor to end
+    /*17*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // END
+    /*18*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*19*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
 // =============================================================================
@@ -85,145 +92,188 @@ const PREDEFINED_MAZE = [
  *                                       'right' - Turn right (clockwise) and move
  *                                       null - End of path (no more moves)
  * @property {string[]} availableMoves - All valid moves at this location
- *                                       (for T-junctions, both left and right are valid moves,
- *                                        but only one is the CORRECT path)
  * 
  * Direction reference when facing South (π/2):
  * - LEFT = turn counterclockwise = face East = +X direction
  * - RIGHT = turn clockwise = face West = -X direction
  * 
- * Total: 9 waypoints = 8 moves to win
+ * Total: 15 waypoints = 14 moves to win (6 T-junctions!)
  * 
  * @type {Object[]}
  */
 const SOLUTION_PATH = [
     // =========================================================================
     // Waypoint 0: START
-    // Player begins here, facing East down the first corridor
     // =========================================================================
     {
-        x: 1,
-        y: 1,
-        facing: 0,                          // Facing East (angle 0)
+        x: 1, y: 1,
+        facing: 0,                          // Facing East
         type: 'start',
-        correctMove: 'forward',             // Move forward to travel the corridor
-        availableMoves: ['forward']         // Only one way to go from start
-    },
-    
-    // =========================================================================
-    // Waypoint 1: End of first corridor (corner)
-    // Player reaches the corner at column 8, auto-oriented to face South
-    // =========================================================================
-    {
-        x: 8,
-        y: 1,
-        facing: Math.PI / 2,                // Facing South (π/2)
-        type: 'corridor',
-        correctMove: 'forward',             // Continue forward (now going south)
+        correctMove: 'forward',
         availableMoves: ['forward']
     },
     
     // =========================================================================
-    // Waypoint 2: T-JUNCTION 1
-    // First decision point at (8,3) - corridors go East (left) and West (right)
-    // Correct path is RIGHT (West, clockwise turn) toward column 3
+    // Waypoint 1: Corner - turn south
     // =========================================================================
     {
-        x: 8,
-        y: 3,
-        facing: Math.PI / 2,                // Facing South (arrived from north)
-        type: 't-junction',
-        correctMove: 'right',               // Turn right (clockwise) = face West = go to col 3
-        availableMoves: ['left', 'right']   // Both directions are physically possible
-    },
-    
-    // =========================================================================
-    // Waypoint 3: After T1, at corner
-    // Player turned right (West), now at column 3, auto-oriented to face South
-    // =========================================================================
-    {
-        x: 3,
-        y: 3,
+        x: 8, y: 1,
         facing: Math.PI / 2,                // Facing South
         type: 'corridor',
-        correctMove: 'forward',             // Continue forward (south)
+        correctMove: 'forward',
         availableMoves: ['forward']
     },
     
     // =========================================================================
-    // Waypoint 4: T-JUNCTION 2
-    // Second decision point at (3,6) - corridors go West (right/dead end) and East (left)
-    // Correct path is LEFT (East, counterclockwise turn) toward column 11
+    // Waypoint 2: T-JUNCTION 1 - go LEFT (East)
     // =========================================================================
     {
-        x: 3,
-        y: 6,
+        x: 8, y: 3,
         facing: Math.PI / 2,                // Facing South
         type: 't-junction',
-        correctMove: 'left',                // Turn left (counterclockwise) = face East = go to col 11
+        correctMove: 'left',                // Turn left = East = go to col 15
         availableMoves: ['left', 'right']
     },
     
     // =========================================================================
-    // Waypoint 5: After T2, at corner
-    // Player turned left (East), now at column 11, auto-oriented to face South
+    // Waypoint 3: Corner after T1
     // =========================================================================
     {
-        x: 11,
-        y: 6,
+        x: 15, y: 3,
         facing: Math.PI / 2,                // Facing South
         type: 'corridor',
-        correctMove: 'forward',             // Continue forward (south)
+        correctMove: 'forward',
         availableMoves: ['forward']
     },
     
     // =========================================================================
-    // Waypoint 6: T-JUNCTION 3
-    // Third decision point at (11,9) - corridors go East (left/dead end) and West (right)
-    // Correct path is RIGHT (West, clockwise turn) toward column 3
+    // Waypoint 4: T-JUNCTION 2 - go RIGHT (West)
     // =========================================================================
     {
-        x: 11,
-        y: 9,
+        x: 15, y: 5,
         facing: Math.PI / 2,                // Facing South
         type: 't-junction',
-        correctMove: 'right',               // Turn right (clockwise) = face West = go to col 3
+        correctMove: 'right',               // Turn right = West = go to col 2
         availableMoves: ['left', 'right']
     },
     
     // =========================================================================
-    // Waypoint 7: After T3, at corner
-    // Player turned right (West), now at column 3, auto-oriented to face South
+    // Waypoint 5: Corner after T2
     // =========================================================================
     {
-        x: 3,
-        y: 9,
+        x: 2, y: 5,
         facing: Math.PI / 2,                // Facing South
         type: 'corridor',
-        correctMove: 'forward',             // Continue forward (south) to the end
+        correctMove: 'forward',
         availableMoves: ['forward']
     },
     
     // =========================================================================
-    // Waypoint 8: END - Santa's Sack!
-    // Player has successfully navigated the maze
+    // Waypoint 6: T-JUNCTION 3 - go LEFT (East)
     // =========================================================================
     {
-        x: 3,
-        y: 11,
+        x: 2, y: 7,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'left',                // Turn left = East = go to col 16
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 7: Corner after T3
+    // =========================================================================
+    {
+        x: 16, y: 7,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 8: T-JUNCTION 4 - go RIGHT (West)
+    // =========================================================================
+    {
+        x: 16, y: 9,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'right',               // Turn right = West = go to col 5
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 9: Corner after T4
+    // =========================================================================
+    {
+        x: 5, y: 9,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 10: T-JUNCTION 5 - go LEFT (East)
+    // =========================================================================
+    {
+        x: 5, y: 11,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'left',                // Turn left = East = go to col 13
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 11: Corner after T5
+    // =========================================================================
+    {
+        x: 13, y: 11,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 12: T-JUNCTION 6 - go RIGHT (West)
+    // =========================================================================
+    {
+        x: 13, y: 13,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'right',               // Turn right = West = go to col 3
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 13: Final corridor corner
+    // =========================================================================
+    {
+        x: 3, y: 13,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 14: END - Santa's Sack!
+    // =========================================================================
+    {
+        x: 3, y: 17,
         facing: Math.PI / 2,                // Facing South
         type: 'end',
-        correctMove: null,                  // No more moves - player wins!
+        correctMove: null,
         availableMoves: []
     }
 ];
 
 /**
- * Maze dimensions
+ * Maze dimensions (20x20 for the larger maze)
  * @type {number}
  */
-const MAZE_WIDTH = 15;
-const MAZE_HEIGHT = 15;
+const MAZE_WIDTH = 20;
+const MAZE_HEIGHT = 20;
 
 // =============================================================================
 // GAME CLASS
@@ -779,9 +829,10 @@ class Game {
         // Get the end waypoint (last in the path)
         const endWaypoint = this.mazePath[this.mazePath.length - 1];
         
-        // Check if player is in the final stretch (waypoint 7 or later)
-        // Waypoint 7 is at (3, 9), waypoint 8 (end) is at (3, 11)
-        const isInFinalCorridor = this.pathIndex >= 7;
+        // Check if player is in the final stretch (last 2 waypoints)
+        // For the 15-waypoint maze, that's waypoint 13+ (final corridor to end)
+        const finalCorridorStart = this.mazePath.length - 2; // 2 waypoints from end
+        const isInFinalCorridor = this.pathIndex >= finalCorridorStart;
         
         if (isInFinalCorridor && endWaypoint) {
             // Calculate distance from player to the end
