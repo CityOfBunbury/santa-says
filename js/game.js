@@ -757,6 +757,14 @@ class Game {
         
         // Show Santa's sack for a moment
         setTimeout(() => {
+            // Update final time display
+            const finalTimeDisplay = document.getElementById('final-time');
+            if (finalTimeDisplay) {
+                const minutes = Math.floor(this.timeElapsed / 60);
+                const seconds = this.timeElapsed % 60;
+                finalTimeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
             // Show win screen
             this.gameScreen.classList.add('hidden');
             this.winScreen.classList.remove('hidden');

@@ -344,7 +344,7 @@ class SantaController {
      * @param {string} message - Message to show
      */
     showSuccess(message) {
-        const html = `<span class="direction" style="color: #228B22;">🎄 ${message} 🎄</span>`;
+        const html = `<span class="direction" style="color: #228B22;">${message}</span>`;
         this.showSpeechBubble(html, false);
     }
     
