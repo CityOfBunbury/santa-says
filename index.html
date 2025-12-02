@@ -51,26 +51,10 @@
                 </div>
             </div>
 
-            <!-- Hourglass Timer -->
+            <!-- Timer (counts up to track completion time) -->
             <div id="timer-section">
-                <div class="timer-label">TIME REMAINING</div>
-                <div id="hourglass">
-                    <svg viewBox="0 0 100 150" class="hourglass-svg">
-                        <!-- Hourglass frame -->
-                        <path class="hourglass-frame" d="M15,10 L85,10 L85,20 L55,70 L55,80 L85,130 L85,140 L15,140 L15,130 L45,80 L45,70 L15,20 Z" 
-                              fill="none" stroke="#8B4513" stroke-width="4"/>
-                        <!-- Top sand -->
-                        <path id="sand-top" class="sand" d="M20,20 L80,20 L55,65 L45,65 Z"/>
-                        <!-- Bottom sand -->
-                        <path id="sand-bottom" class="sand" d="M45,85 L55,85 L80,130 L20,130 Z"/>
-                        <!-- Falling sand stream -->
-                        <rect id="sand-stream" class="sand-stream" x="48" y="70" width="4" height="15"/>
-                        <!-- Decorative caps -->
-                        <rect class="hourglass-cap" x="10" y="5" width="80" height="10" rx="2"/>
-                        <rect class="hourglass-cap" x="10" y="135" width="80" height="10" rx="2"/>
-                    </svg>
-                </div>
-                <div id="timer-display">1:00</div>
+                <div class="timer-label">⏱️ TIME</div>
+                <div id="timer-display">0:00</div>
             </div>
 
             <!-- Compass Controls (Forward, Left, Right only - no backward in maze mode) -->

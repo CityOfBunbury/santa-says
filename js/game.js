@@ -282,12 +282,9 @@ class Game {
         /** @type {string} The win code to display */
         this.winCode = '0326';
         
-        // Timer State
-        /** @type {number} Total game time in seconds */
-        this.totalTime = 60;
-        
-        /** @type {number} Time remaining in seconds */
-        this.timeRemaining = 60;
+        // Timer State (counts UP to track how long it takes)
+        /** @type {number} Time elapsed in seconds */
+        this.timeElapsed = 0;
         
         /** @type {number} Timer interval ID */
         this.timerInterval = null;
@@ -394,7 +391,7 @@ class Game {
         
         // Reset game state
         this.pathIndex = 0;
-        this.timeRemaining = this.totalTime;
+        this.timeElapsed = 0;
         this.isPlaying = true;
         this.canMove = true;
         
@@ -675,7 +672,7 @@ class Game {
     resetToStart() {
         // Reset state
         this.pathIndex = 0;
-        this.timeRemaining = this.totalTime;
+        this.timeElapsed = 0;
         this.isPlaying = true;
         
         // Reset player position to the start waypoint
@@ -726,24 +723,14 @@ class Game {
     }
     
     /**
-     * Start the countdown timer
+     * Start the timer (counts UP to track completion time)
      */
     startTimer() {
         this.stopTimer(); // Clear any existing timer
         
         this.timerInterval = setInterval(() => {
-            this.timeRemaining--;
+            this.timeElapsed++;
             this.updateTimerDisplay();
-            
-            // Check for time up
-            if (this.timeRemaining <= 0) {
-                this.handleTimeUp();
-            }
-            
-            // Warning state when low on time
-            if (this.timeRemaining <= 15) {
-                this.timerDisplay.classList.add('warning');
-            }
         }, 1000);
     }
     
@@ -758,40 +745,12 @@ class Game {
     }
     
     /**
-     * Update timer display
+     * Update timer display (shows elapsed time)
      */
     updateTimerDisplay() {
-        const minutes = Math.floor(this.timeRemaining / 60);
-        const seconds = this.timeRemaining % 60;
+        const minutes = Math.floor(this.timeElapsed / 60);
+        const seconds = this.timeElapsed % 60;
         this.timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        // Update hourglass sand (visual feedback)
-        this.updateHourglass();
-    }
-    
-    /**
-     * Update hourglass visual based on time remaining
-     */
-    updateHourglass() {
-        const percentage = this.timeRemaining / this.totalTime;
-        
-        // This would animate the SVG sand levels
-        // For simplicity, we just update opacity
-        const sandTop = document.getElementById('sand-top');
-        const sandBottom = document.getElementById('sand-bottom');
-        
-        if (sandTop && sandBottom) {
-            sandTop.style.opacity = percentage;
-            sandBottom.style.opacity = 1 - percentage;
-        }
-    }
-    
-    /**
-     * Handle time running out
-     */
-    handleTimeUp() {
-        this.stopTimer();
-        this.triggerTrap('time', 'TIME\'S UP!');
     }
     
     /**
@@ -800,12 +759,42 @@ class Game {
     startRenderLoop() {
         const render = () => {
             if (this.raycaster) {
+                // Update Santa's sack visibility based on player position
+                this.updateSackVisibility();
+                
+                // Render the scene
                 this.raycaster.render(this.player, this.maze);
             }
             this.animationFrame = requestAnimationFrame(render);
         };
         
         render();
+    }
+    
+    /**
+     * Update whether Santa's sack is visible in the 3D view
+     * The sack appears when player is in the final corridor heading to the end
+     */
+    updateSackVisibility() {
+        // Get the end waypoint (last in the path)
+        const endWaypoint = this.mazePath[this.mazePath.length - 1];
+        
+        // Check if player is in the final stretch (waypoint 7 or later)
+        // Waypoint 7 is at (3, 9), waypoint 8 (end) is at (3, 11)
+        const isInFinalCorridor = this.pathIndex >= 7;
+        
+        if (isInFinalCorridor && endWaypoint) {
+            // Calculate distance from player to the end
+            const dx = endWaypoint.x + 0.5 - this.player.x;
+            const dy = endWaypoint.y + 0.5 - this.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Show the sack with calculated distance
+            this.raycaster.setSackVisibility(true, distance);
+        } else {
+            // Hide the sack when not in final corridor
+            this.raycaster.setSackVisibility(false);
+        }
     }
     
     /**

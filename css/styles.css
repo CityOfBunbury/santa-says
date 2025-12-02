@@ -338,12 +338,12 @@ body {
 }
 
 /* ============================================
-   HOURGLASS TIMER
+   TIMER (Counts up to track completion time)
    ============================================ */
 #timer-section {
     flex: 0 0 auto;
     text-align: center;
-    padding: 15px;
+    padding: 20px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 15px;
     border: 2px solid var(--gold);
@@ -351,62 +351,17 @@ body {
 
 .timer-label {
     font-family: var(--font-retro);
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     color: var(--gold);
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     letter-spacing: 2px;
-}
-
-#hourglass {
-    width: 80px;
-    height: 120px;
-    margin: 0 auto;
-}
-
-.hourglass-svg {
-    width: 100%;
-    height: 100%;
-}
-
-.hourglass-frame {
-    stroke: var(--gold);
-}
-
-.hourglass-cap {
-    fill: var(--gold);
-}
-
-.sand {
-    fill: #FFD700;
-    transition: d 0.1s linear;
-}
-
-.sand-stream {
-    fill: var(--gold);
-    animation: sandFall 0.5s linear infinite;
-}
-
-@keyframes sandFall {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
 }
 
 #timer-display {
     font-family: var(--font-retro);
-    font-size: 1.5rem;
+    font-size: 2rem;
     color: var(--snow-white);
-    margin-top: 10px;
-}
-
-#timer-display.warning {
-    color: var(--christmas-red-light);
-    animation: timerPulse 0.5s ease-in-out infinite;
-}
-
-@keyframes timerPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 /* ============================================

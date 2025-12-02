@@ -55,6 +55,16 @@ class Raycaster {
         /** @type {boolean} Whether the player is walking */
         this.isWalking = false;
         
+        // Santa's Sack state (visible at end of maze)
+        /** @type {boolean} Whether to show Santa's sack */
+        this.showSack = false;
+        
+        /** @type {number} Distance to Santa's sack (for size calculation) */
+        this.sackDistance = 10;
+        
+        /** @type {number} Animation offset for sack glow */
+        this.sackGlowOffset = 0;
+        
         // Initialize canvas size
         this.resize();
         
@@ -90,12 +100,140 @@ class Raycaster {
         // Cast rays and draw walls
         this.castRays(player, map);
         
+        // Draw Santa's sack at the end of the maze (if visible)
+        if (this.showSack) {
+            this.drawSantasSack();
+        }
+        
         // Draw decorations
         this.drawDecorations(player, map);
         
-        // Apply walking bob effect
+        // Update animation offsets
         if (this.isWalking) {
             this.walkOffset += 0.2;
+        }
+        this.sackGlowOffset += 0.05;
+    }
+    
+    /**
+     * Set whether Santa's sack should be visible and at what distance
+     * @param {boolean} visible - Whether the sack should be shown
+     * @param {number} distance - Distance to the sack (affects size)
+     */
+    setSackVisibility(visible, distance = 10) {
+        this.showSack = visible;
+        this.sackDistance = Math.max(0.5, distance); // Minimum distance to prevent too large
+    }
+    
+    /**
+     * Draw Santa's sack at the end of the corridor
+     * The sack gets bigger as the player gets closer
+     */
+    drawSantasSack() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // Calculate size based on distance (closer = bigger)
+        // At distance 1, sack is very large; at distance 10, it's small
+        const baseSize = 40;
+        const maxSize = 250;
+        const size = Math.min(maxSize, baseSize + (maxSize - baseSize) * (1 - this.sackDistance / 10));
+        
+        // Vertical position (lower when closer, like perspective)
+        const verticalOffset = 20 + (1 - this.sackDistance / 10) * 80;
+        const sackY = centerY + verticalOffset;
+        
+        // Calculate shade based on distance (darker when far)
+        const shade = Math.max(0.3, 1 - this.sackDistance / 12);
+        
+        // Draw glow effect behind the sack
+        const glowSize = size * 1.5 + Math.sin(this.sackGlowOffset * 2) * 10;
+        const glowGradient = this.ctx.createRadialGradient(
+            centerX, sackY, 0,
+            centerX, sackY, glowSize
+        );
+        glowGradient.addColorStop(0, `rgba(255, 215, 0, ${0.4 * shade})`);
+        glowGradient.addColorStop(0.5, `rgba(255, 100, 0, ${0.2 * shade})`);
+        glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        
+        this.ctx.fillStyle = glowGradient;
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, sackY, glowSize, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Draw the sack body (red velvet bag)
+        const sackWidth = size * 0.8;
+        const sackHeight = size;
+        
+        // Sack gradient for 3D effect
+        const sackGradient = this.ctx.createRadialGradient(
+            centerX - sackWidth * 0.2, sackY - sackHeight * 0.2, 0,
+            centerX, sackY, sackWidth
+        );
+        const r = Math.floor(139 * shade);
+        const g = Math.floor(0 * shade);
+        const b = Math.floor(0 * shade);
+        const rLight = Math.floor(200 * shade);
+        sackGradient.addColorStop(0, `rgb(${rLight}, ${Math.floor(20 * shade)}, ${Math.floor(20 * shade)})`);
+        sackGradient.addColorStop(0.7, `rgb(${r}, ${g}, ${b})`);
+        sackGradient.addColorStop(1, `rgb(${Math.floor(80 * shade)}, 0, 0)`);
+        
+        this.ctx.fillStyle = sackGradient;
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX, sackY, sackWidth, sackHeight, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Draw the tied top of the sack
+        const tieY = sackY - sackHeight * 0.85;
+        const tieWidth = sackWidth * 0.4;
+        const tieHeight = size * 0.15;
+        
+        this.ctx.fillStyle = `rgb(${Math.floor(101 * shade)}, ${Math.floor(67 * shade)}, ${Math.floor(33 * shade)})`;
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX, tieY, tieWidth, tieHeight, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Draw ribbon/bow
+        const ribbonWidth = tieWidth * 1.5;
+        const ribbonHeight = tieHeight * 0.8;
+        
+        this.ctx.fillStyle = `rgb(${Math.floor(255 * shade)}, ${Math.floor(215 * shade)}, 0)`;
+        this.ctx.fillRect(centerX - ribbonWidth / 2, tieY - ribbonHeight / 2, ribbonWidth, ribbonHeight);
+        
+        // Draw bow loops
+        const bowSize = ribbonWidth * 0.4;
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX - ribbonWidth / 2, tieY, bowSize * 0.6, bowSize, Math.PI / 4, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX + ribbonWidth / 2, tieY, bowSize * 0.6, bowSize, -Math.PI / 4, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Add sparkles around the sack (only when close enough to see)
+        if (this.sackDistance < 6) {
+            const numSparkles = Math.floor(8 * shade);
+            for (let i = 0; i < numSparkles; i++) {
+                const angle = (i / numSparkles) * Math.PI * 2 + this.sackGlowOffset;
+                const sparkleRadius = size * 1.2 + Math.sin(this.sackGlowOffset * 3 + i) * 20;
+                const sparkleX = centerX + Math.cos(angle) * sparkleRadius;
+                const sparkleY = sackY + Math.sin(angle) * sparkleRadius * 0.6;
+                const sparkleSize = 2 + Math.sin(this.sackGlowOffset * 5 + i * 2) * 2;
+                
+                this.ctx.fillStyle = `rgba(255, 215, 0, ${0.8 * shade})`;
+                this.ctx.beginPath();
+                this.ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+        
+        // Add "SANTA'S SACK" text when very close
+        if (this.sackDistance < 3) {
+            const textOpacity = Math.min(1, (3 - this.sackDistance) / 2);
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${textOpacity})`;
+            this.ctx.font = `bold ${Math.floor(20 + (3 - this.sackDistance) * 10)}px 'Mountains of Christmas', cursive`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText("🎁 Santa's Sack! 🎁", centerX, sackY - sackHeight - 30);
         }
     }
     
