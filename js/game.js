@@ -16,7 +16,7 @@
 // =============================================================================
 
 /**
- * Predefined maze layout - 20x20 grid
+ * Predefined maze layout - 20x22 grid
  * A larger, more complex maze with 6 T-junctions for a longer adventure!
  * 
  * Legend:
@@ -26,20 +26,22 @@
  * The maze winds through multiple corridors with T-junctions where
  * Santa guides the player left or right.
  * 
- * Solution path overview (14 moves, 6 T-junctions):
+ * Solution path overview (16 moves, 6 T-junctions):
  *   START → → → → ↓
  *                 ↓
- *                 T1 → → → → ↓ (right)
+ *                 T1 → → → → ↓ (left)
  *                           ↓
- *           ← ← ← ← ← ← ← T2 (left)
+ *           ← ← ← ← ← ← ← T2 (right)
  *           ↓
- *           T3 → → → → → → ↓ (right)
+ *           T3 → → → → → → ↓ (left)
  *                         ↓
- *             ← ← ← ← ← T4 (left)
+ *             ← ← ← ← ← T4 (right)
  *             ↓
- *             T5 → → → → ↓ (right)
+ *             T5 → → → → ↓ (left)
  *                       ↓
- *         ← ← ← ← ← ← T6 (left)
+ *                       ↓ (extended corridor - 2 extra forwards)
+ *                       ↓
+ *         ← ← ← ← ← ← T6 (right)
  *         ↓
  *        END
  * 
@@ -59,14 +61,16 @@ const PREDEFINED_MAZE = [
     /*9*/ [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],  // T4
     /*10*/[1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     /*11*/[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // T5
-    /*12*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
-    /*13*/[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // T6
-    /*14*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    /*15*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    /*16*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Final corridor to end
-    /*17*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // END
-    /*18*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    /*19*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    /*12*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],  // Extended corridor
+    /*13*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],  // Extended corridor
+    /*14*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1],  // Extended corridor
+    /*15*/[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],  // T6
+    /*16*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*17*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*18*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // Final corridor
+    /*19*/[1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  // END
+    /*20*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    /*21*/[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
 // =============================================================================
@@ -97,7 +101,7 @@ const PREDEFINED_MAZE = [
  * - LEFT = turn counterclockwise = face East = +X direction
  * - RIGHT = turn clockwise = face West = -X direction
  * 
- * Total: 15 waypoints = 14 moves to win (6 T-junctions!)
+ * Total: 17 waypoints = 16 moves to win (6 T-junctions!)
  * 
  * @type {Object[]}
  */
@@ -224,7 +228,7 @@ const SOLUTION_PATH = [
     },
     
     // =========================================================================
-    // Waypoint 11: Corner after T5
+    // Waypoint 11: Corner after T5 - start of extended corridor
     // =========================================================================
     {
         x: 13, y: 11,
@@ -235,21 +239,10 @@ const SOLUTION_PATH = [
     },
     
     // =========================================================================
-    // Waypoint 12: T-JUNCTION 6 - go RIGHT (West)
+    // Waypoint 12: Extended corridor - forward 1
     // =========================================================================
     {
         x: 13, y: 13,
-        facing: Math.PI / 2,                // Facing South
-        type: 't-junction',
-        correctMove: 'right',               // Turn right = West = go to col 3
-        availableMoves: ['left', 'right']
-    },
-    
-    // =========================================================================
-    // Waypoint 13: Final corridor corner
-    // =========================================================================
-    {
-        x: 3, y: 13,
         facing: Math.PI / 2,                // Facing South
         type: 'corridor',
         correctMove: 'forward',
@@ -257,10 +250,43 @@ const SOLUTION_PATH = [
     },
     
     // =========================================================================
-    // Waypoint 14: END - Santa's Sack!
+    // Waypoint 13: Extended corridor - forward 2
     // =========================================================================
     {
-        x: 3, y: 17,
+        x: 13, y: 14,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 14: T-JUNCTION 6 - go RIGHT (West)
+    // =========================================================================
+    {
+        x: 13, y: 15,
+        facing: Math.PI / 2,                // Facing South
+        type: 't-junction',
+        correctMove: 'right',               // Turn right = West = go to col 3
+        availableMoves: ['left', 'right']
+    },
+    
+    // =========================================================================
+    // Waypoint 15: Final corridor corner
+    // =========================================================================
+    {
+        x: 3, y: 15,
+        facing: Math.PI / 2,                // Facing South
+        type: 'corridor',
+        correctMove: 'forward',
+        availableMoves: ['forward']
+    },
+    
+    // =========================================================================
+    // Waypoint 16: END - Santa's Sack!
+    // =========================================================================
+    {
+        x: 3, y: 19,
         facing: Math.PI / 2,                // Facing South
         type: 'end',
         correctMove: null,
@@ -269,11 +295,11 @@ const SOLUTION_PATH = [
 ];
 
 /**
- * Maze dimensions (20x20 for the larger maze)
+ * Maze dimensions (20x22 for the larger maze with extended corridor)
  * @type {number}
  */
 const MAZE_WIDTH = 20;
-const MAZE_HEIGHT = 20;
+const MAZE_HEIGHT = 22;
 
 // =============================================================================
 // GAME CLASS
