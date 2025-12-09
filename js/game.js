@@ -365,6 +365,10 @@ class Game {
         /** @type {number} Timer interval ID */
         this.timerInterval = null;
         
+        // Player info
+        /** @type {string} Player name for leaderboard */
+        this.playerName = '';
+        
         // Player State (for raycaster)
         /** @type {Object} Player position and direction */
         this.player = {
@@ -414,6 +418,11 @@ class Game {
         // Print score button
         document.getElementById('print-score-btn').addEventListener('click', () => this.printScore());
         
+        // Settings modal
+        document.getElementById('settings-btn').addEventListener('click', () => this.openSettings());
+        document.getElementById('close-settings-btn').addEventListener('click', () => this.closeSettings());
+        document.querySelector('.modal-backdrop').addEventListener('click', () => this.closeSettings());
+        
         // Connect printer button
         document.getElementById('connect-printer-btn').addEventListener('click', () => this.connectPrinter());
         
@@ -457,6 +466,21 @@ class Game {
     }
     
     /**
+     * Open the settings modal
+     */
+    openSettings() {
+        document.getElementById('settings-modal').classList.remove('hidden');
+        this.updatePrinterStatus();
+    }
+    
+    /**
+     * Close the settings modal
+     */
+    closeSettings() {
+        document.getElementById('settings-modal').classList.add('hidden');
+    }
+    
+    /**
      * Test print a sample receipt
      */
     async testPrint() {
@@ -467,7 +491,7 @@ class Game {
             statusText.textContent = '🖨️ Printing test receipt...';
             
             // Print a test receipt with sample data (1 minute 23 seconds)
-            await window.receiptPrinter.printReceipt(83, new Date());
+            await window.receiptPrinter.printReceipt(83, new Date(), 'Test Player');
             
             statusText.textContent = '✓ Test print sent!';
             
@@ -542,6 +566,10 @@ class Game {
      * Start a new game
      */
     startGame() {
+        // Capture player name from input
+        const nameInput = document.getElementById('player-name');
+        this.playerName = nameInput ? nameInput.value.trim() : '';
+        
         // Initialize components
         this.raycaster = new Raycaster(this.canvas);
         this.santa = new SantaController();
@@ -910,7 +938,7 @@ class Game {
         printBtn.disabled = true;
         
         try {
-            await window.receiptPrinter.printReceipt(this.timeElapsed, this.completionDate);
+            await window.receiptPrinter.printReceipt(this.timeElapsed, this.completionDate, this.playerName);
             
             printStatus.textContent = `✓ Sent to ${window.receiptPrinter.deviceName}`;
             printStatus.className = 'win-print-status success';
@@ -950,7 +978,8 @@ class Game {
         try {
             await window.receiptPrinter.printReceipt(
                 this.timeElapsed, 
-                this.completionDate || new Date()
+                this.completionDate || new Date(),
+                this.playerName
             );
             
             printStatus.textContent = '✓ Print dialog opened';

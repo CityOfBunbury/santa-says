@@ -160,6 +160,162 @@ body {
     color: #888;
 }
 
+/* Settings Button */
+.settings-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-family: var(--font-festive);
+    font-size: 1rem;
+    background: transparent;
+    color: #888;
+    border: 1px solid #555;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.settings-button:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+/* Settings Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    position: relative;
+    background: linear-gradient(180deg, #2a1a1a 0%, #1a0a0a 100%);
+    border: 3px solid var(--gold);
+    border-radius: 15px;
+    padding: 0;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    transform: scale(1);
+    transition: transform 0.3s ease;
+}
+
+.modal.hidden .modal-content {
+    transform: scale(0.9);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 2px solid var(--gold);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h2 {
+    font-family: var(--font-festive);
+    font-size: 1.5rem;
+    color: var(--gold);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--christmas-red-light);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.printer-info {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.printer-info .printer-hint {
+    margin: 8px 0;
+    font-size: 0.9rem;
+    color: #aaa;
+    text-align: left;
+}
+
+/* Player Name Input Section */
+#player-name-section {
+    margin: 25px 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border: 2px solid var(--christmas-green);
+}
+
+.name-label {
+    display: block;
+    font-size: 1.1rem;
+    color: var(--gold);
+    margin-bottom: 12px;
+}
+
+.name-input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px 15px;
+    font-family: var(--font-festive);
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 3px solid var(--gold);
+    border-radius: 8px;
+    color: var(--chimney-black);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: var(--christmas-green-light);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.name-input::placeholder {
+    color: #888;
+    font-style: italic;
+}
+
 /* ============================================
    GAME SCREEN LAYOUT
    ============================================ */
@@ -667,20 +823,8 @@ body {
 }
 
 /* ============================================
-   PRINTER CONNECTION SECTION
+   PRINTER SETTINGS (Modal)
    ============================================ */
-#printer-section {
-    margin-top: 30px;
-    padding-top: 20px;
-}
-
-.printer-divider {
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    margin-bottom: 20px;
-}
-
 .printer-status {
     display: flex;
     align-items: center;

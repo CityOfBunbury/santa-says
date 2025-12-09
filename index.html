@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/styles.css">
     <!-- Google Font for festive feel -->
     <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- QR Code Generator Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
     <!-- Start Screen -->
@@ -20,14 +22,32 @@
                 <p>Follow Santa's directions to find his Sack!</p>
                 <p class="warning">⚠️ Wrong moves trigger TRAPS! ⚠️</p>
             </div>
+            
+            <!-- Player Name Input (Optional for Leaderboard) -->
+            <div id="player-name-section">
+                <label for="player-name" class="name-label">Enter your name for the leaderboard:</label>
+                <input type="text" id="player-name" class="name-input" placeholder="Your Name (optional)" maxlength="30">
+            </div>
+            
             <button id="start-btn" class="start-button">START GAME</button>
             <div class="controls-hint">
                 <p>Use Arrow Keys or Click the Compass</p>
             </div>
             
-            <!-- Printer Connection Section -->
-            <div id="printer-section">
-                <div class="printer-divider"></div>
+            <!-- Settings Button -->
+            <button id="settings-btn" class="settings-button">⚙️ Printer Settings</button>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖨️ Printer Settings</h2>
+                <button id="close-settings-btn" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
                 <div id="printer-status" class="printer-status">
                     <span class="printer-icon">🖨️</span>
                     <span id="printer-status-text">Receipt printer not configured</span>
@@ -36,7 +56,10 @@
                     <button id="connect-printer-btn" class="printer-button">Setup Receipt Printer</button>
                     <button id="test-print-btn" class="printer-button printer-button-test">Test Print</button>
                 </div>
-                <p class="printer-hint">Use "Launch Game (Silent Print).bat" for no dialog</p>
+                <div class="printer-info">
+                    <p class="printer-hint">💡 Set your Epson TM-T88V as the default Windows printer</p>
+                    <p class="printer-hint">🚀 Use "Launch Game (Silent Print).bat" for automatic printing</p>
+                </div>
             </div>
         </div>
     </div>
