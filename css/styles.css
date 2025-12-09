@@ -640,3 +640,309 @@ body {
     }
 }
 
+/* ============================================
+   WIN SCREEN BUTTONS
+   ============================================ */
+.win-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.print-btn {
+    background: linear-gradient(180deg, var(--christmas-red-light) 0%, var(--christmas-red) 100%) !important;
+}
+
+.print-btn:hover {
+    background: linear-gradient(180deg, var(--gold) 0%, #FFA500 100%) !important;
+}
+
+.print-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ============================================
+   PRINTER CONNECTION SECTION
+   ============================================ */
+#printer-section {
+    margin-top: 30px;
+    padding-top: 20px;
+}
+
+.printer-divider {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin-bottom: 20px;
+}
+
+.printer-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.printer-status.connected {
+    background: rgba(22, 91, 51, 0.5);
+    border: 1px solid var(--christmas-green-light);
+}
+
+.printer-status.connected #printer-status-text {
+    color: #90EE90;
+}
+
+.printer-icon {
+    font-size: 1.5rem;
+}
+
+.printer-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.printer-button {
+    font-family: var(--font-retro);
+    font-size: 0.6rem;
+    padding: 12px 20px;
+    background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 100%);
+    color: var(--snow-white);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.printer-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    background: linear-gradient(180deg, #5a5a5a 0%, #4a4a4a 100%);
+}
+
+.printer-button-alt {
+    background: linear-gradient(180deg, #3a3a4a 0%, #2a2a3a 100%);
+    border-color: #888;
+    font-size: 0.5rem;
+}
+
+.printer-button-alt:hover {
+    box-shadow: 0 0 15px rgba(136, 136, 136, 0.3);
+}
+
+.printer-button-test {
+    background: linear-gradient(180deg, #4a3a2a 0%, #3a2a1a 100%);
+    border-color: #FFA500;
+}
+
+.printer-button-test:hover {
+    background: linear-gradient(180deg, #FFA500 0%, #FF8C00 100%);
+    color: #000;
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.4);
+}
+
+.printer-button.connected {
+    background: linear-gradient(180deg, var(--christmas-green-light) 0%, var(--christmas-green) 100%);
+    pointer-events: none;
+}
+
+.printer-hint {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #888;
+    font-style: italic;
+}
+
+/* Win screen print status */
+.win-print-status {
+    margin: 15px 0;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.win-print-status.printing {
+    background: rgba(255, 215, 0, 0.2);
+    color: var(--gold);
+    animation: printingPulse 1s ease-in-out infinite;
+}
+
+.win-print-status.success {
+    background: rgba(22, 91, 51, 0.5);
+    color: #90EE90;
+}
+
+.win-print-status.error {
+    background: rgba(139, 0, 0, 0.3);
+    color: #ff6b6b;
+}
+
+.win-print-status.not-connected {
+    background: rgba(100, 100, 100, 0.3);
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+@keyframes printingPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* ============================================
+   RECEIPT TEMPLATE (Hidden on screen)
+   ============================================ */
+.receipt-only {
+    display: none;
+}
+
+/* ============================================
+   PRINT STYLES - Receipt Printer Formatting
+   ============================================ */
+@media print {
+    /* Hide everything except the receipt */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Reset body for printing */
+    body {
+        background: white !important;
+        color: black !important;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Show only the receipt template */
+    .receipt-only,
+    .receipt-only * {
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    .receipt-only {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 72mm; /* Standard receipt width (80mm paper with margins) */
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 12pt;
+        line-height: 1.3;
+        color: black;
+        background: white;
+        padding: 5mm;
+    }
+    
+    .receipt-content {
+        text-align: center;
+        width: 100%;
+    }
+    
+    .receipt-header {
+        margin-bottom: 3mm;
+    }
+    
+    .receipt-logo {
+        font-size: 36pt;
+        margin-bottom: 2mm;
+    }
+    
+    .receipt-header h1 {
+        font-size: 18pt;
+        font-weight: bold;
+        margin: 0;
+        letter-spacing: 2px;
+    }
+    
+    .receipt-subtitle {
+        font-size: 10pt;
+        margin: 2mm 0;
+        letter-spacing: 1px;
+    }
+    
+    .receipt-divider {
+        font-size: 10pt;
+        margin: 2mm 0;
+        letter-spacing: -1px;
+    }
+    
+    .receipt-body {
+        margin: 4mm 0;
+    }
+    
+    .receipt-congrats {
+        font-size: 14pt;
+        font-weight: bold;
+        margin: 2mm 0;
+    }
+    
+    .receipt-msg {
+        font-size: 11pt;
+        margin: 2mm 0;
+    }
+    
+    .receipt-label {
+        font-size: 10pt;
+        margin: 3mm 0 1mm 0;
+    }
+    
+    .receipt-time {
+        font-size: 24pt;
+        font-weight: bold;
+        margin: 2mm 0;
+        letter-spacing: 2px;
+    }
+    
+    .receipt-date {
+        font-size: 9pt;
+        margin: 2mm 0;
+    }
+    
+    .receipt-footer {
+        margin-top: 4mm;
+    }
+    
+    .receipt-thanks {
+        font-size: 10pt;
+        margin: 2mm 0;
+    }
+    
+    .receipt-holly {
+        font-size: 12pt;
+        margin: 2mm 0;
+    }
+    
+    .receipt-trees {
+        font-size: 10pt;
+        margin-top: 3mm;
+        letter-spacing: 1px;
+    }
+    
+    /* Ensure no page breaks in the receipt */
+    .receipt-content {
+        page-break-inside: avoid;
+    }
+    
+    /* Remove any margins from the print */
+    @page {
+        margin: 0;
+        size: 80mm auto; /* Receipt paper width, auto height */
+    }
+}
+

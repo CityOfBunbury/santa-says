@@ -411,6 +411,15 @@ class Game {
         // Play again button
         document.getElementById('play-again-btn').addEventListener('click', () => this.restartGame());
         
+        // Print score button
+        document.getElementById('print-score-btn').addEventListener('click', () => this.printScore());
+        
+        // Connect printer button
+        document.getElementById('connect-printer-btn').addEventListener('click', () => this.connectPrinter());
+        
+        // Test print button
+        document.getElementById('test-print-btn').addEventListener('click', () => this.testPrint());
+        
         // Compass buttons
         document.querySelectorAll('.compass-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -421,6 +430,84 @@ class Game {
         
         // Keyboard controls
         document.addEventListener('keydown', (e) => this.handleKeydown(e));
+        
+        // Update printer status on load
+        this.updatePrinterStatus();
+    }
+    
+    /**
+     * Connect/setup receipt printer
+     */
+    async connectPrinter() {
+        const statusText = document.getElementById('printer-status-text');
+        
+        try {
+            statusText.textContent = 'Setting up printer...';
+            
+            await window.receiptPrinter.connect();
+            
+            // Update status display
+            this.updatePrinterStatus();
+            
+        } catch (error) {
+            console.error('Printer setup error:', error);
+            statusText.textContent = error.message || 'Setup cancelled';
+            this.updatePrinterStatus();
+        }
+    }
+    
+    /**
+     * Test print a sample receipt
+     */
+    async testPrint() {
+        const statusText = document.getElementById('printer-status-text');
+        const originalText = statusText.textContent;
+        
+        try {
+            statusText.textContent = '🖨️ Printing test receipt...';
+            
+            // Print a test receipt with sample data (1 minute 23 seconds)
+            await window.receiptPrinter.printReceipt(83, new Date());
+            
+            statusText.textContent = '✓ Test print sent!';
+            
+            // Restore original status after 3 seconds
+            setTimeout(() => {
+                this.updatePrinterStatus();
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Test print error:', error);
+            statusText.textContent = '✗ ' + (error.message || 'Print failed');
+            
+            // Restore original status after 3 seconds
+            setTimeout(() => {
+                this.updatePrinterStatus();
+            }, 3000);
+        }
+    }
+    
+    /**
+     * Update printer status display
+     */
+    updatePrinterStatus() {
+        if (!window.receiptPrinter) return;
+        
+        const status = window.receiptPrinter.getStatus();
+        const statusText = document.getElementById('printer-status-text');
+        const statusContainer = document.getElementById('printer-status');
+        const connectBtn = document.getElementById('connect-printer-btn');
+        
+        if (status.connected) {
+            statusText.textContent = status.message + ' ✓';
+            statusContainer.classList.add('connected');
+            connectBtn.textContent = 'Change Printer';
+            connectBtn.classList.remove('connected'); // Allow changing printer
+        } else {
+            statusText.textContent = status.message;
+            statusContainer.classList.remove('connected');
+            connectBtn.textContent = 'Setup Receipt Printer';
+        }
     }
     
     /**
@@ -781,20 +868,101 @@ class Game {
         this.stopTimer();
         this.santa.showWin();
         
+        // Store final time for printing
+        this.finalTimeFormatted = this.formatTime(this.timeElapsed);
+        this.completionDate = new Date();
+        
         // Show Santa's sack for a moment
         setTimeout(() => {
             // Update final time display
             const finalTimeDisplay = document.getElementById('final-time');
             if (finalTimeDisplay) {
-                const minutes = Math.floor(this.timeElapsed / 60);
-                const seconds = this.timeElapsed % 60;
-                finalTimeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                finalTimeDisplay.textContent = this.finalTimeFormatted;
             }
             
             // Show win screen
             this.gameScreen.classList.add('hidden');
             this.winScreen.classList.remove('hidden');
+            
+            // Auto-print if printer is connected
+            this.autoPrintScore();
         }, 2000);
+    }
+    
+    /**
+     * Automatically print score if printer is configured
+     */
+    async autoPrintScore() {
+        const printStatus = document.getElementById('win-print-status');
+        const printBtn = document.getElementById('print-score-btn');
+        
+        if (!window.receiptPrinter || !window.receiptPrinter.isConnected) {
+            // Printer not configured - show message and enable manual button
+            printStatus.textContent = '🖨️ Setup printer on start screen to print scores';
+            printStatus.className = 'win-print-status not-connected';
+            printBtn.disabled = false;
+            return;
+        }
+        
+        // Printer is configured - print!
+        printStatus.textContent = '🖨️ Opening print dialog...';
+        printStatus.className = 'win-print-status printing';
+        printBtn.disabled = true;
+        
+        try {
+            await window.receiptPrinter.printReceipt(this.timeElapsed, this.completionDate);
+            
+            printStatus.textContent = `✓ Sent to ${window.receiptPrinter.deviceName}`;
+            printStatus.className = 'win-print-status success';
+            printBtn.textContent = '🖨️ PRINT AGAIN';
+            printBtn.disabled = false;
+            
+        } catch (error) {
+            console.error('Print failed:', error);
+            printStatus.textContent = '✗ Print failed: ' + error.message;
+            printStatus.className = 'win-print-status error';
+            printBtn.disabled = false;
+        }
+    }
+    
+    /**
+     * Format time in minutes:seconds
+     * @param {number} totalSeconds - Time in seconds
+     * @returns {string} Formatted time string
+     */
+    formatTime(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    /**
+     * Print the score to the receipt printer
+     */
+    async printScore() {
+        const printStatus = document.getElementById('win-print-status');
+        const printBtn = document.getElementById('print-score-btn');
+        
+        printStatus.textContent = '🖨️ Opening print dialog...';
+        printStatus.className = 'win-print-status printing';
+        printBtn.disabled = true;
+        
+        try {
+            await window.receiptPrinter.printReceipt(
+                this.timeElapsed, 
+                this.completionDate || new Date()
+            );
+            
+            printStatus.textContent = '✓ Print dialog opened';
+            printStatus.className = 'win-print-status success';
+            printBtn.disabled = false;
+            
+        } catch (error) {
+            console.error('Print failed:', error);
+            printStatus.textContent = '✗ Print failed: ' + error.message;
+            printStatus.className = 'win-print-status error';
+            printBtn.disabled = false;
+        }
     }
     
     /**

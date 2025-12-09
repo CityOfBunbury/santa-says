@@ -24,6 +24,20 @@
             <div class="controls-hint">
                 <p>Use Arrow Keys or Click the Compass</p>
             </div>
+            
+            <!-- Printer Connection Section -->
+            <div id="printer-section">
+                <div class="printer-divider"></div>
+                <div id="printer-status" class="printer-status">
+                    <span class="printer-icon">🖨️</span>
+                    <span id="printer-status-text">Receipt printer not configured</span>
+                </div>
+                <div class="printer-buttons">
+                    <button id="connect-printer-btn" class="printer-button">Setup Receipt Printer</button>
+                    <button id="test-print-btn" class="printer-button printer-button-test">Test Print</button>
+                </div>
+                <p class="printer-hint">Use "Launch Game (Silent Print).bat" for no dialog</p>
+            </div>
         </div>
     </div>
 
@@ -102,11 +116,45 @@
                 <p class="time-label">Your Time:</p>
                 <div id="final-time">0:00</div>
             </div>
-            <button id="play-again-btn" class="start-button">PLAY AGAIN</button>
+            <div id="print-status-container">
+                <div id="win-print-status" class="win-print-status"></div>
+            </div>
+            <div class="win-buttons">
+                <button id="print-score-btn" class="start-button print-btn">🖨️ PRINT SCORE</button>
+                <button id="play-again-btn" class="start-button">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Print Template (hidden, only for printing) -->
+    <div id="receipt-template" class="receipt-only">
+        <div class="receipt-content">
+            <div class="receipt-header">
+                <div class="receipt-logo">🎅</div>
+                <h1>SANTA SAYS</h1>
+                <p class="receipt-subtitle">THE DOOM EDITION</p>
+                <div class="receipt-divider">************************</div>
+            </div>
+            <div class="receipt-body">
+                <p class="receipt-congrats">CONGRATULATIONS!</p>
+                <p class="receipt-msg">You found Santa's Sack!</p>
+                <div class="receipt-divider">------------------------</div>
+                <p class="receipt-label">YOUR TIME:</p>
+                <p class="receipt-time" id="receipt-time">0:00</p>
+                <div class="receipt-divider">------------------------</div>
+                <p class="receipt-date" id="receipt-date"></p>
+            </div>
+            <div class="receipt-footer">
+                <div class="receipt-divider">************************</div>
+                <p class="receipt-thanks">Thank you for playing!</p>
+                <p class="receipt-holly">🎄 Happy Holidays! 🎄</p>
+                <div class="receipt-trees">🌲🌲🌲🌲🌲🌲🌲🌲</div>
+            </div>
         </div>
     </div>
 
     <!-- Scripts -->
+    <script src="js/receipt-printer.js"></script>
     <script src="js/raycaster.js"></script>
     <script src="js/santa.js"></script>
     <script src="js/game.js"></script>
