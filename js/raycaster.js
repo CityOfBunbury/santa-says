@@ -126,7 +126,53 @@ class Raycaster {
     }
     
     /**
-     * Draw Santa's sack at the end of the corridor
+     * Pixel art representation of Santa's sack (16x20 pixels)
+     * Colors: 0=transparent, 1=dark red, 2=red, 3=light red, 4=gold, 5=dark gold, 6=brown, 7=highlight
+     */
+    getSackPixelArt() {
+        return [
+            [0,0,0,0,0,4,4,4,4,4,4,0,0,0,0,0],
+            [0,0,0,0,4,5,4,4,4,4,5,4,0,0,0,0],
+            [0,0,0,4,4,4,4,4,4,4,4,4,4,0,0,0],
+            [0,0,0,0,6,6,6,6,6,6,6,6,0,0,0,0],
+            [0,0,0,6,6,6,6,6,6,6,6,6,6,0,0,0],
+            [0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0],
+            [0,1,1,2,2,3,3,2,2,3,2,2,2,1,1,0],
+            [0,1,2,2,3,7,3,2,2,3,3,2,2,2,1,0],
+            [1,1,2,2,3,3,2,2,2,2,2,2,2,2,1,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,1,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+            [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+            [0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0],
+            [0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0],
+            [0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0],
+            [0,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0],
+            [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+        ];
+    }
+    
+    /**
+     * Get color palette for pixel art sack
+     * @param {number} shade - Brightness multiplier (0-1)
+     */
+    getSackPalette(shade) {
+        return {
+            0: null, // transparent
+            1: `rgb(${Math.floor(80 * shade)}, ${Math.floor(10 * shade)}, ${Math.floor(10 * shade)})`,   // dark red outline
+            2: `rgb(${Math.floor(139 * shade)}, ${Math.floor(20 * shade)}, ${Math.floor(20 * shade)})`,  // red
+            3: `rgb(${Math.floor(180 * shade)}, ${Math.floor(40 * shade)}, ${Math.floor(40 * shade)})`,  // light red
+            4: `rgb(${Math.floor(255 * shade)}, ${Math.floor(215 * shade)}, 0)`,  // gold
+            5: `rgb(${Math.floor(180 * shade)}, ${Math.floor(150 * shade)}, 0)`,  // dark gold
+            6: `rgb(${Math.floor(101 * shade)}, ${Math.floor(67 * shade)}, ${Math.floor(33 * shade)})`,  // brown (tie)
+            7: `rgb(${Math.floor(255 * shade)}, ${Math.floor(200 * shade)}, ${Math.floor(200 * shade)})` // highlight
+        };
+    }
+    
+    /**
+     * Draw Santa's sack at the end of the corridor (pixel art style)
      * The sack gets bigger as the player gets closer
      */
     drawSantasSack() {
@@ -134,106 +180,84 @@ class Raycaster {
         const centerY = this.canvas.height / 2;
         
         // Calculate size based on distance (closer = bigger)
-        // At distance 1, sack is very large; at distance 10, it's small
-        const baseSize = 40;
-        const maxSize = 250;
-        const size = Math.min(maxSize, baseSize + (maxSize - baseSize) * (1 - this.sackDistance / 10));
+        const basePixelSize = 2;
+        const maxPixelSize = 14;
+        const pixelSize = Math.min(maxPixelSize, basePixelSize + (maxPixelSize - basePixelSize) * (1 - this.sackDistance / 10));
         
         // Vertical position (lower when closer, like perspective)
         const verticalOffset = 20 + (1 - this.sackDistance / 10) * 80;
-        const sackY = centerY + verticalOffset;
         
         // Calculate shade based on distance (darker when far)
         const shade = Math.max(0.3, 1 - this.sackDistance / 12);
         
+        // Get pixel art data
+        const pixels = this.getSackPixelArt();
+        const palette = this.getSackPalette(shade);
+        
+        const sackWidth = pixels[0].length * pixelSize;
+        const sackHeight = pixels.length * pixelSize;
+        const startX = centerX - sackWidth / 2;
+        const startY = centerY + verticalOffset - sackHeight / 2;
+        
         // Draw glow effect behind the sack
-        const glowSize = size * 1.5 + Math.sin(this.sackGlowOffset * 2) * 10;
+        const glowSize = Math.max(sackWidth, sackHeight) * 0.8 + Math.sin(this.sackGlowOffset * 2) * 10;
         const glowGradient = this.ctx.createRadialGradient(
-            centerX, sackY, 0,
-            centerX, sackY, glowSize
+            centerX, centerY + verticalOffset, 0,
+            centerX, centerY + verticalOffset, glowSize
         );
-        glowGradient.addColorStop(0, `rgba(255, 215, 0, ${0.4 * shade})`);
-        glowGradient.addColorStop(0.5, `rgba(255, 100, 0, ${0.2 * shade})`);
+        glowGradient.addColorStop(0, `rgba(255, 215, 0, ${0.5 * shade})`);
+        glowGradient.addColorStop(0.5, `rgba(255, 100, 0, ${0.25 * shade})`);
         glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
         
         this.ctx.fillStyle = glowGradient;
         this.ctx.beginPath();
-        this.ctx.arc(centerX, sackY, glowSize, 0, Math.PI * 2);
+        this.ctx.arc(centerX, centerY + verticalOffset, glowSize, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // Draw the sack body (red velvet bag)
-        const sackWidth = size * 0.8;
-        const sackHeight = size;
-        
-        // Sack gradient for 3D effect
-        const sackGradient = this.ctx.createRadialGradient(
-            centerX - sackWidth * 0.2, sackY - sackHeight * 0.2, 0,
-            centerX, sackY, sackWidth
-        );
-        const r = Math.floor(139 * shade);
-        const g = Math.floor(0 * shade);
-        const b = Math.floor(0 * shade);
-        const rLight = Math.floor(200 * shade);
-        sackGradient.addColorStop(0, `rgb(${rLight}, ${Math.floor(20 * shade)}, ${Math.floor(20 * shade)})`);
-        sackGradient.addColorStop(0.7, `rgb(${r}, ${g}, ${b})`);
-        sackGradient.addColorStop(1, `rgb(${Math.floor(80 * shade)}, 0, 0)`);
-        
-        this.ctx.fillStyle = sackGradient;
-        this.ctx.beginPath();
-        this.ctx.ellipse(centerX, sackY, sackWidth, sackHeight, 0, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Draw the tied top of the sack
-        const tieY = sackY - sackHeight * 0.85;
-        const tieWidth = sackWidth * 0.4;
-        const tieHeight = size * 0.15;
-        
-        this.ctx.fillStyle = `rgb(${Math.floor(101 * shade)}, ${Math.floor(67 * shade)}, ${Math.floor(33 * shade)})`;
-        this.ctx.beginPath();
-        this.ctx.ellipse(centerX, tieY, tieWidth, tieHeight, 0, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Draw ribbon/bow
-        const ribbonWidth = tieWidth * 1.5;
-        const ribbonHeight = tieHeight * 0.8;
-        
-        this.ctx.fillStyle = `rgb(${Math.floor(255 * shade)}, ${Math.floor(215 * shade)}, 0)`;
-        this.ctx.fillRect(centerX - ribbonWidth / 2, tieY - ribbonHeight / 2, ribbonWidth, ribbonHeight);
-        
-        // Draw bow loops
-        const bowSize = ribbonWidth * 0.4;
-        this.ctx.beginPath();
-        this.ctx.ellipse(centerX - ribbonWidth / 2, tieY, bowSize * 0.6, bowSize, Math.PI / 4, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.beginPath();
-        this.ctx.ellipse(centerX + ribbonWidth / 2, tieY, bowSize * 0.6, bowSize, -Math.PI / 4, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Add sparkles around the sack (only when close enough to see)
-        if (this.sackDistance < 6) {
-            const numSparkles = Math.floor(8 * shade);
-            for (let i = 0; i < numSparkles; i++) {
-                const angle = (i / numSparkles) * Math.PI * 2 + this.sackGlowOffset;
-                const sparkleRadius = size * 1.2 + Math.sin(this.sackGlowOffset * 3 + i) * 20;
-                const sparkleX = centerX + Math.cos(angle) * sparkleRadius;
-                const sparkleY = sackY + Math.sin(angle) * sparkleRadius * 0.6;
-                const sparkleSize = 2 + Math.sin(this.sackGlowOffset * 5 + i * 2) * 2;
+        // Draw pixel art sack
+        for (let row = 0; row < pixels.length; row++) {
+            for (let col = 0; col < pixels[row].length; col++) {
+                const colorIndex = pixels[row][col];
+                const color = palette[colorIndex];
                 
-                this.ctx.fillStyle = `rgba(255, 215, 0, ${0.8 * shade})`;
-                this.ctx.beginPath();
-                this.ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
-                this.ctx.fill();
+                if (color) {
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(
+                        startX + col * pixelSize,
+                        startY + row * pixelSize,
+                        pixelSize,
+                        pixelSize
+                    );
+                }
             }
         }
         
-        // Add "SANTA'S SACK" text when very close
+        // Add animated sparkles around the sack (only when close enough)
+        if (this.sackDistance < 6) {
+            const numSparkles = Math.floor(6 * shade);
+            for (let i = 0; i < numSparkles; i++) {
+                const angle = (i / numSparkles) * Math.PI * 2 + this.sackGlowOffset;
+                const sparkleRadius = sackWidth * 0.7 + Math.sin(this.sackGlowOffset * 3 + i) * 15;
+                const sparkleX = centerX + Math.cos(angle) * sparkleRadius;
+                const sparkleY = centerY + verticalOffset + Math.sin(angle) * sparkleRadius * 0.6;
+                
+                // Pixel-style sparkles (small squares)
+                const sparkleSize = Math.floor(pixelSize * 0.4) + 1;
+                const sparkleAlpha = 0.6 + Math.sin(this.sackGlowOffset * 5 + i * 2) * 0.4;
+                
+                this.ctx.fillStyle = `rgba(255, 215, 0, ${sparkleAlpha * shade})`;
+                this.ctx.fillRect(sparkleX - sparkleSize/2, sparkleY - sparkleSize/2, sparkleSize, sparkleSize);
+            }
+        }
+        
+        // Add pixel-style label when very close
         if (this.sackDistance < 3) {
             const textOpacity = Math.min(1, (3 - this.sackDistance) / 2);
             this.ctx.fillStyle = `rgba(255, 215, 0, ${textOpacity})`;
-            this.ctx.font = `bold ${Math.floor(20 + (3 - this.sackDistance) * 10)}px 'Mountains of Christmas', cursive`;
+            this.ctx.font = `bold ${Math.floor(14 + (3 - this.sackDistance) * 6)}px 'Press Start 2P', monospace`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText("🎁 Santa's Sack! 🎁", centerX, sackY - sackHeight - 30);
+            this.ctx.fillText("SANTA'S SACK!", centerX, startY - 20);
         }
     }
     
