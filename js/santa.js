@@ -140,9 +140,9 @@ class SantaController {
             this.consecutiveTricks = 0;
         }
         
-        // In hard mode, some tricks become "Simon Says" traps
+        // Some tricks become "Simon Says" traps (both modes)
         let isSimonSaysTrap = false;
-        if (this.hardMode && !isSantaSays) {
+        if (!isSantaSays) {
             isSimonSaysTrap = Math.random() < this.simonSaysProbability;
             this.isSimonSays = isSimonSaysTrap;
         }

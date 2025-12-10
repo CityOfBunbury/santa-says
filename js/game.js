@@ -832,6 +832,10 @@ class Game {
         this.stopTimer();
         this.santa.clearUrgency();
         
+        // Add 10 second time penalty
+        this.timeElapsed += 10;
+        this.updateTimerDisplay();
+        
         // Pick random trap type
         const trap = this.trapTypes[Math.floor(Math.random() * this.trapTypes.length)];
         
@@ -856,12 +860,19 @@ class Game {
         this.trapOverlay.classList.remove('hidden');
         this.trapOverlay.classList.add('visible');
         
-        // After animation, reset
+        // After animation, reset or resume based on mode
         setTimeout(() => {
             this.trapOverlay.classList.remove('visible');
             this.trapOverlay.classList.add('hidden');
             this.trapOverlay.classList.remove('chimney-fall');
-            this.resetToStart();
+            
+            if (this.hardMode) {
+                // Hard mode: reset to start of maze
+                this.resetToStart();
+            } else {
+                // Normal mode: resume from current position
+                this.resumeFromCurrentPosition();
+            }
         }, 3000);
     }
     
@@ -889,6 +900,26 @@ class Game {
         this.startTimer();
         
         // Give new command
+        setTimeout(() => {
+            this.giveNextCommand();
+        }, 1000);
+    }
+    
+    /**
+     * Resume game from current position (normal mode)
+     * Player keeps their maze progress but gets a new command
+     */
+    resumeFromCurrentPosition() {
+        // Resume playing without resetting position
+        this.isPlaying = true;
+        
+        // Reset Santa's commands (but not player position)
+        this.santa.reset();
+        
+        // Restart timer (continues from current time with penalty already added)
+        this.startTimer();
+        
+        // Give new command from current position
         setTimeout(() => {
             this.giveNextCommand();
         }, 1000);
