@@ -53,6 +53,15 @@ class ReceiptPrinter {
         if (this.printerName) {
             this.isConnected = true;
         }
+        
+        // Log JsBarcode availability on init
+        console.log('ReceiptPrinter initialized');
+        console.log('JsBarcode available on init:', typeof JsBarcode !== 'undefined');
+        
+        // Check again after a short delay (in case script is still loading)
+        setTimeout(() => {
+            console.log('JsBarcode available after 1s:', typeof JsBarcode !== 'undefined');
+        }, 1000);
     }
     
     /**
@@ -172,25 +181,75 @@ class ReceiptPrinter {
             <div class="player-name">${this.escapeHtml(playerName)}</div>
         ` : '';
         
-        // Barcode section (only show if name provided for leaderboard)
-        const barcodeSection = playerName ? `
-            <div class="barcode-section">
-                <div class="divider">------------------------</div>
-                <div class="barcode-label">SCAN TO LOG SCORE:</div>
-                <svg id="barcode"></svg>
-                <div class="barcode-data">${this.escapeHtml(barcodeData)}</div>
-            </div>
-            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
-            <script>
-                JsBarcode("#barcode", "${this.escapeHtml(barcodeData)}", {
+        // Generate barcode SVG (only if name provided and JsBarcode is available)
+        let barcodeSection = '';
+        
+        console.log('=== BARCODE GENERATION DEBUG ===');
+        console.log('Player name:', playerName);
+        console.log('Barcode data:', barcodeData);
+        console.log('JsBarcode available:', typeof JsBarcode !== 'undefined');
+        console.log('JsBarcode type:', typeof JsBarcode);
+        
+        if (!playerName) {
+            console.log('Skipping barcode: No player name provided');
+        } else if (typeof JsBarcode === 'undefined') {
+            console.error('JsBarcode library not loaded! Check if the script tag in index.html is loading correctly.');
+            console.log('Window.JsBarcode:', window.JsBarcode);
+            // Show fallback without barcode
+            barcodeSection = `
+                <div class="barcode-section">
+                    <div class="divider">------------------------</div>
+                    <div class="barcode-label">SCORE DATA (barcode lib missing):</div>
+                    <div class="barcode-data">${this.escapeHtml(barcodeData)}</div>
+                </div>
+            `;
+        } else {
+            try {
+                console.log('Creating temporary SVG element...');
+                // Create a temporary SVG element to generate the barcode
+                const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                console.log('SVG element created:', tempSvg);
+                
+                console.log('Calling JsBarcode with data:', barcodeData);
+                JsBarcode(tempSvg, barcodeData, {
                     format: "CODE128",
                     width: 2,
-                    height: 50,
+                    height: 40,
                     displayValue: false,
-                    margin: 5
+                    margin: 2
                 });
-            <\/script>
-        ` : '';
+                console.log('JsBarcode call completed');
+                
+                // Get the SVG as a string
+                const barcodeSvg = tempSvg.outerHTML;
+                console.log('Generated SVG length:', barcodeSvg.length);
+                console.log('Generated SVG preview:', barcodeSvg.substring(0, 200) + '...');
+                
+                barcodeSection = `
+                    <div class="barcode-section">
+                        <div class="divider">------------------------</div>
+                        <div class="barcode-label">SCAN TO LOG SCORE:</div>
+                        ${barcodeSvg}
+                        <div class="barcode-data">${this.escapeHtml(barcodeData)}</div>
+                    </div>
+                `;
+                console.log('Barcode section created successfully');
+            } catch (e) {
+                console.error('Failed to generate barcode:', e);
+                console.error('Error name:', e.name);
+                console.error('Error message:', e.message);
+                console.error('Error stack:', e.stack);
+                // Fallback: just show the data without barcode
+                barcodeSection = `
+                    <div class="barcode-section">
+                        <div class="divider">------------------------</div>
+                        <div class="barcode-label">SCORE DATA (error):</div>
+                        <div class="barcode-data">${this.escapeHtml(barcodeData)}</div>
+                    </div>
+                `;
+            }
+        }
+        console.log('=== END BARCODE DEBUG ===');
         
         return `
 <!DOCTYPE html>
@@ -275,7 +334,7 @@ class ReceiptPrinter {
             font-weight: bold;
         }
         
-        #barcode {
+        .barcode-section svg {
             width: 55mm;
             height: auto;
             margin: 1mm auto;
@@ -363,20 +422,34 @@ class ReceiptPrinter {
      * @param {string} playerName - Player's name (optional)
      */
     async printReceipt(timeElapsed, completionDate = new Date(), playerName = '') {
+        console.log('=== PRINT RECEIPT CALLED ===');
+        console.log('Time elapsed:', timeElapsed);
+        console.log('Player name:', playerName);
+        console.log('JsBarcode available at print time:', typeof JsBarcode !== 'undefined');
+        
         return new Promise((resolve, reject) => {
             try {
                 // Generate receipt HTML
+                console.log('Generating receipt HTML...');
                 const receiptHTML = this.generateReceiptHTML(timeElapsed, completionDate, playerName);
+                console.log('Receipt HTML generated, length:', receiptHTML.length);
+                
+                // Check if barcode SVG is in the HTML
+                const hasSvg = receiptHTML.includes('<svg');
+                console.log('Receipt contains SVG:', hasSvg);
                 
                 // Write to iframe
+                console.log('Writing to iframe...');
                 const frameDoc = this.printFrame.contentWindow.document;
                 frameDoc.open();
                 frameDoc.write(receiptHTML);
                 frameDoc.close();
+                console.log('Iframe content written');
                 
                 // Wait for content to load (including barcode library and rendering), then print
                 setTimeout(() => {
                     try {
+                        console.log('Attempting to print...');
                         this.printFrame.contentWindow.focus();
                         this.printFrame.contentWindow.print();
                         
