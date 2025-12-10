@@ -20,25 +20,34 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'Mountains of Christmas', cursive;
             background: linear-gradient(135deg, var(--christmas-red) 0%, var(--chimney-black) 50%, var(--christmas-green) 100%);
-            min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-start;
             align-items: center;
             color: var(--snow-white);
+            padding: 20px;
+            gap: 20px;
         }
 
         .container {
             text-align: center;
-            padding: 40px;
+            padding: 20px 40px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 20px;
             border: 4px solid var(--gold);
             box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
             max-width: 500px;
             width: 90%;
+            order: 2; /* Move to bottom */
+            flex-shrink: 0; /* Don't shrink the input area */
         }
 
         h1 {
@@ -51,7 +60,7 @@
         .subtitle {
             font-size: 1.2rem;
             color: #aaa;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .input-container {
@@ -117,15 +126,276 @@
 
         .decorations {
             font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        /* Leaderboard Section */
+        .leaderboards-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+            order: 1; /* Show at top */
+            flex: 1;
+            min-height: 0; /* Allow flex shrinking */
+        }
+
+        .leaderboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
             margin-bottom: 20px;
+        }
+
+        .leaderboard-header h2 {
+            font-size: 2.2rem;
+            color: var(--gold);
+            text-shadow: 2px 2px 0 var(--christmas-red);
+        }
+
+        .refresh-btn {
+            background: var(--christmas-green);
+            border: 2px solid var(--gold);
+            color: var(--snow-white);
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: var(--gold);
+            color: var(--chimney-black);
+            transform: scale(1.05);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .leaderboards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            flex: 1;
+            min-height: 0; /* Allow grid to shrink */
+        }
+
+        @media (max-width: 768px) {
+            .leaderboards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .leaderboard-box {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            border: 4px solid var(--gold);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Allow box to shrink */
+        }
+
+        .leaderboard-box.santa-box {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 30px rgba(139, 0, 0, 0.3);
+        }
+
+        .leaderboard-box.elf-box {
+            border-color: #90EE90;
+            box-shadow: 0 0 30px rgba(22, 91, 51, 0.3);
+        }
+
+        .box-header {
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .santa-box .box-header {
+            background: rgba(139, 0, 0, 0.4);
+            color: #ff6b6b;
+            border-bottom: 2px solid #ff6b6b;
+        }
+
+        .elf-box .box-header {
+            background: rgba(22, 91, 51, 0.4);
+            color: #90EE90;
+            border-bottom: 2px solid #90EE90;
+        }
+
+        .scores-content {
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0; /* Allow content to shrink and scroll */
+        }
+
+        /* Custom scrollbar styling */
+        .scores-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scores-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .scores-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .scores-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.7);
+        }
+
+        .scores-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .scores-table th {
+            background: rgba(30, 30, 30, 0.95);
+            color: var(--gold);
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 1.1rem;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .scores-table th:first-child {
+            width: 50px;
+            text-align: center;
+        }
+
+        .scores-table th:last-child {
+            text-align: right;
+        }
+
+        .scores-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 1.05rem;
+        }
+
+        .scores-table td:first-child {
+            text-align: center;
+            font-weight: bold;
+            color: var(--gold);
+        }
+
+        .scores-table td:last-child {
+            text-align: right;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .scores-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .scores-table tr:hover {
+            background: rgba(255, 215, 0, 0.08);
+        }
+
+        .scores-table tbody tr:first-child td:first-child {
+            color: #FFD700;
+            font-size: 1.2rem;
+        }
+
+        .scores-table tbody tr:nth-child(2) td:first-child {
+            color: #C0C0C0;
+        }
+
+        .scores-table tbody tr:nth-child(3) td:first-child {
+            color: #CD7F32;
+        }
+
+        .medal {
+            font-size: 1.3rem;
+        }
+
+        .loading-scores {
+            padding: 40px;
+            color: #aaa;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .loading-scores .spinner {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .no-scores {
+            padding: 30px;
+            color: #888;
+            font-size: 1.1rem;
+            text-align: center;
         }
     </style>
 </head>
 <body>
+    <!-- Leaderboards Section (at top) -->
+    <div class="leaderboards-wrapper">
+        <div class="leaderboard-header">
+            <span class="decorations">🏆</span>
+            <h2>High Scores</h2>
+            <button class="refresh-btn" id="refresh-btn" onclick="loadHighScores()">↻ Refresh</button>
+        </div>
+
+        <div class="leaderboards-grid">
+            <!-- Santa Says Leaderboard -->
+            <div class="leaderboard-box santa-box">
+                <div class="box-header">🎅 Santa Says</div>
+                <div class="scores-content" id="santa-scores">
+                    <div class="loading-scores">
+                        <div class="spinner"></div>
+                        <p>Loading scores...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Elf Hunt Leaderboard -->
+            <div class="leaderboard-box elf-box">
+                <div class="box-header">🧝 Elf Hunt</div>
+                <div class="scores-content" id="elf-scores">
+                    <div class="loading-scores">
+                        <div class="spinner"></div>
+                        <p>Loading scores...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Logger (at bottom) -->
     <div class="container">
-        <div class="decorations">🎄 🎅 🎄</div>
         <h1>Score Logger</h1>
-        <p class="subtitle">Santa Says - Manual Entry</p>
         
         <div class="input-container">
             <input 
@@ -136,9 +406,6 @@
                 autofocus
             >
         </div>
-        
-        <p class="hint">Press Enter to submit</p>
-        
         <div id="status"></div>
     </div>
 
@@ -148,6 +415,10 @@
         
         const API_URL = 'https://windmill.bunbury.wa.gov.au/api/w/cob_test/jobs/run/p/u/colin/add_score_to_santa_says';
         const AUTH_TOKEN = 'QLrCKCW4UHhBLTUNHeSAl4imOZS6hAmR';
+        
+        // High scores API
+        const HIGH_SCORES_URL = 'https://windmill.bunbury.wa.gov.au/api/w/cob_test/jobs/run_wait_result/f/u/colin/get_high_scores';
+        const HIGH_SCORES_TOKEN = '17iW5AiYUdveF5I7I0dh7Wz3Q8glu97K';
         
         // Attribute IDs for the API
         const NAME_ATTRIBUTE_ID = 'b6b61b7f-64ec-4fb0-9e01-d206614d585c';
@@ -220,6 +491,8 @@
                 if (response.ok) {
                     showStatus('✓ Score logged successfully!', 'success');
                     input.value = '';
+                    // Refresh scores after successful submission
+                    loadHighScores();
                 } else {
                     const errorText = await response.text();
                     console.error('API Error:', response.status, errorText);
@@ -234,6 +507,122 @@
             input.focus();
         }
         
+        // Get medal emoji for rank
+        function getMedal(rank) {
+            if (rank === 1) return '<span class="medal">🥇</span>';
+            if (rank === 2) return '<span class="medal">🥈</span>';
+            if (rank === 3) return '<span class="medal">🥉</span>';
+            return rank;
+        }
+        
+        // Format time as M:SS (e.g., 1.24 becomes 1:24)
+        function formatTime(time) {
+            // Time is stored as minutes.seconds (e.g., 1.24 = 1 min 24 sec)
+            const timeStr = String(time);
+            const parts = timeStr.split('.');
+            
+            const minutes = parseInt(parts[0]) || 0;
+            let seconds = parts[1] || '0';
+            
+            // Pad seconds to always show 2 digits
+            seconds = seconds.padEnd(2, '0').substring(0, 2);
+            
+            return `${minutes}:${seconds}`;
+        }
+        
+        // Render scores table
+        function renderScoresTable(scores) {
+            if (!scores || scores.length === 0) {
+                return '<div class="no-scores">🎄 No scores yet!<br>Be the first! 🎄</div>';
+            }
+            
+            // Sort scores - lower time is better for both games
+            const sortedScores = [...scores].sort((a, b) => a.time - b.time);
+            
+            let html = `
+                <table class="scores-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Time Taken</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            sortedScores.forEach((score, index) => {
+                const rank = index + 1;
+                html += `
+                    <tr>
+                        <td>${getMedal(rank)}</td>
+                        <td>${escapeHtml(score.name)}</td>
+                        <td>${formatTime(score.time)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            return html;
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Load high scores from API
+        async function loadHighScores() {
+            const refreshBtn = document.getElementById('refresh-btn');
+            const santaPanel = document.getElementById('santa-scores');
+            const elfPanel = document.getElementById('elf-scores');
+            
+            // Show loading state
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '↻ Loading...';
+            
+            const loadingHtml = '<div class="loading-scores"><div class="spinner"></div><p>Loading scores...</p></div>';
+            santaPanel.innerHTML = loadingHtml;
+            elfPanel.innerHTML = loadingHtml;
+            
+            try {
+                const response = await fetch(HIGH_SCORES_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${HIGH_SCORES_TOKEN}`
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Render Santa Says scores
+                    santaPanel.innerHTML = renderScoresTable(data.santa || []);
+                    
+                    // Render Elf Hunt scores
+                    elfPanel.innerHTML = renderScoresTable(data.elf || []);
+                } else {
+                    const errorMsg = '<div class="no-scores">❌ Failed to load scores</div>';
+                    santaPanel.innerHTML = errorMsg;
+                    elfPanel.innerHTML = errorMsg;
+                    console.error('High scores API error:', response.status);
+                }
+            } catch (error) {
+                const errorMsg = '<div class="no-scores">❌ Network error loading scores</div>';
+                santaPanel.innerHTML = errorMsg;
+                elfPanel.innerHTML = errorMsg;
+                console.error('High scores network error:', error);
+            }
+            
+            // Reset refresh button
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = '↻ Refresh';
+        }
+        
         // Listen for Enter key
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -242,16 +631,18 @@
             }
         });
         
-        // Focus input on page load
+        // Focus input on page load and load high scores
         window.addEventListener('load', () => {
             input.focus();
+            loadHighScores();
         });
         
-        // Refocus if user clicks outside
-        document.addEventListener('click', () => {
-            input.focus();
+        // Refocus if user clicks outside (but not on leaderboard elements)
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.leaderboards-wrapper')) {
+                input.focus();
+            }
         });
     </script>
 </body>
 </html>
-
