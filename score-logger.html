@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Says - Score Logger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --christmas-red: #8B0000;
+            --christmas-green: #165B33;
+            --gold: #FFD700;
+            --snow-white: #FFFAFA;
+            --chimney-black: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Mountains of Christmas', cursive;
+            background: linear-gradient(135deg, var(--christmas-red) 0%, var(--chimney-black) 50%, var(--christmas-green) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--snow-white);
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            border: 4px solid var(--gold);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--gold);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 var(--christmas-red);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        #score-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid var(--gold);
+            border-radius: 10px;
+            color: var(--chimney-black);
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #score-input:focus {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            border-color: var(--christmas-green);
+        }
+
+        #score-input::placeholder {
+            color: #888;
+        }
+
+        .hint {
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #888;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #status.visible {
+            opacity: 1;
+        }
+
+        #status.success {
+            background: rgba(22, 91, 51, 0.8);
+            color: #90EE90;
+        }
+
+        #status.error {
+            background: rgba(139, 0, 0, 0.8);
+            color: #ff6b6b;
+        }
+
+        #status.sending {
+            background: rgba(255, 215, 0, 0.2);
+            color: var(--gold);
+        }
+
+        .decorations {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="decorations">🎄 🎅 🎄</div>
+        <h1>Score Logger</h1>
+        <p class="subtitle">Santa Says - Manual Entry</p>
+        
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="score-input" 
+                placeholder="Scan barcode (NAME|TIME)..."
+                autocomplete="off"
+                autofocus
+            >
+        </div>
+        
+        <p class="hint">Press Enter to submit</p>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const input = document.getElementById('score-input');
+        const status = document.getElementById('status');
+        
+        const API_URL = 'https://windmill.bunbury.wa.gov.au/api/w/cob_test/jobs/run/p/u/colin/add_score_to_santa_says';
+        const AUTH_TOKEN = 'QLrCKCW4UHhBLTUNHeSAl4imOZS6hAmR';
+        
+        // Attribute IDs for the API
+        const NAME_ATTRIBUTE_ID = 'b6b61b7f-64ec-4fb0-9e01-d206614d585c';
+        const TIME_ATTRIBUTE_ID = '019b020b-ca47-7ff3-a60f-fabd2b17690c';
+        
+        // Show status message
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = type + ' visible';
+            
+            // Auto-hide after 3 seconds (except for sending)
+            if (type !== 'sending') {
+                setTimeout(() => {
+                    status.classList.remove('visible');
+                }, 3000);
+            }
+        }
+        
+        // Parse barcode data (format: NAME|TIME) into API format
+        function parseBarcodeData(value) {
+            const parts = value.split('|');
+            
+            if (parts.length !== 2) {
+                throw new Error('Invalid format. Expected: NAME|TIME');
+            }
+            
+            const [name, time] = parts;
+            
+            if (!name.trim() || !time.trim()) {
+                throw new Error('Name and time cannot be empty');
+            }
+            
+            // Build the values array in the format the API expects
+            return [
+                { data: name.trim(), attribute_id: NAME_ATTRIBUTE_ID },
+                { data: time.trim(), attribute_id: TIME_ATTRIBUTE_ID }
+            ];
+        }
+        
+        // Submit score to API
+        async function submitScore(value) {
+            if (!value.trim()) {
+                showStatus('Please enter a value', 'error');
+                return;
+            }
+            
+            // Parse the barcode data into the proper format
+            let valuesArray;
+            try {
+                valuesArray = parseBarcodeData(value.trim());
+            } catch (parseError) {
+                showStatus('✗ ' + parseError.message, 'error');
+                return;
+            }
+            
+            showStatus('Sending...', 'sending');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        values: valuesArray
+                    })
+                });
+                
+                if (response.ok) {
+                    showStatus('✓ Score logged successfully!', 'success');
+                    input.value = '';
+                } else {
+                    const errorText = await response.text();
+                    console.error('API Error:', response.status, errorText);
+                    showStatus(`✗ Error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                console.error('Network Error:', error);
+                showStatus('✗ Network error - check connection', 'error');
+            }
+            
+            // Always refocus the input
+            input.focus();
+        }
+        
+        // Listen for Enter key
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitScore(input.value);
+            }
+        });
+        
+        // Focus input on page load
+        window.addEventListener('load', () => {
+            input.focus();
+        });
+        
+        // Refocus if user clicks outside
+        document.addEventListener('click', () => {
+            input.focus();
+        });
+    </script>
+</body>
+</html>
+

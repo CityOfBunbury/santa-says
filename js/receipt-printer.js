@@ -121,56 +121,20 @@ class ReceiptPrinter {
     }
     
     /**
-     * Generate the leaderboard URL with player name and time
+     * Generate the barcode data string for scanning
+     * Format: NAME|TIME (e.g., "John|1.29")
      * @param {string} playerName - Player's name
      * @param {number} timeElapsed - Time in seconds
-     * @returns {string} The complete URL for the QR code
+     * @returns {string} Simple pipe-delimited string for barcode
      */
-    generateLeaderboardUrl(playerName, timeElapsed) {
+    generateBarcodeData(playerName, timeElapsed) {
         // Format time as decimal M.SS (e.g., 1:29 becomes 1.29, 2:05 becomes 2.05)
         const minutes = Math.floor(timeElapsed / 60);
         const seconds = timeElapsed % 60;
         const timeDecimal = `${minutes}.${seconds.toString().padStart(2, '0')}`;
         
-        // Build the values array
-        const values = [
-            { data: playerName || 'Anonymous', attribute_id: this.nameAttributeId },
-            { data: timeDecimal, attribute_id: this.timeAttributeId }
-        ];
-        
-        // URL encode the values
-        const valuesEncoded = encodeURIComponent(JSON.stringify(values));
-        
-        // Build the complete URL
-        const url = `${this.leaderboardBaseUrl}?token=${this.leaderboardToken}&payload=eyJ2YWx1ZXMiOltdfQ%3D%3D&include_query=values&values=${valuesEncoded}`;
-        
-        return url;
-    }
-    
-    /**
-     * Generate QR code as data URL
-     * @param {string} data - Data to encode in QR code
-     * @returns {string} Base64 data URL of the QR code image
-     */
-    generateQRCode(data) {
-        // Check if qrcode library is available
-        if (typeof qrcode === 'undefined') {
-            console.error('QR code library not loaded');
-            return null;
-        }
-        
-        try {
-            // Create QR code (type 0 = auto-detect best version)
-            const qr = qrcode(0, 'M'); // M = medium error correction
-            qr.addData(data);
-            qr.make();
-            
-            // Generate as data URL (6 pixels per module, 4 pixel margin)
-            return qr.createDataURL(6, 4);
-        } catch (error) {
-            console.error('Failed to generate QR code:', error);
-            return null;
-        }
+        // Simple format: NAME|TIME
+        return `${playerName || 'Anonymous'}|${timeDecimal}`;
     }
     
     /**
@@ -197,9 +161,8 @@ class ReceiptPrinter {
             minute: '2-digit'
         });
         
-        // Generate leaderboard URL and QR code
-        const leaderboardUrl = this.generateLeaderboardUrl(playerName, timeElapsed);
-        const qrCodeDataUrl = this.generateQRCode(leaderboardUrl);
+        // Generate barcode data (simple format: NAME|TIME)
+        const barcodeData = this.generateBarcodeData(playerName, timeElapsed);
         
         // Get a random Christmas cracker joke
         const joke = this.getRandomJoke();
@@ -209,14 +172,24 @@ class ReceiptPrinter {
             <div class="player-name">${this.escapeHtml(playerName)}</div>
         ` : '';
         
-        // QR code section (only show if name provided for leaderboard)
-        const qrSection = playerName && qrCodeDataUrl ? `
-            <div class="qr-section">
+        // Barcode section (only show if name provided for leaderboard)
+        const barcodeSection = playerName ? `
+            <div class="barcode-section">
                 <div class="divider">------------------------</div>
-                <div class="qr-label">SCAN TO LOG SCORE:</div>
-                <img src="${qrCodeDataUrl}" class="qr-code" alt="Leaderboard QR Code">
-                <div class="qr-hint">Scan with your phone!</div>
+                <div class="barcode-label">SCAN TO LOG SCORE:</div>
+                <svg id="barcode"></svg>
+                <div class="barcode-data">${this.escapeHtml(barcodeData)}</div>
             </div>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+            <script>
+                JsBarcode("#barcode", "${this.escapeHtml(barcodeData)}", {
+                    format: "CODE128",
+                    width: 2,
+                    height: 50,
+                    displayValue: false,
+                    margin: 5
+                });
+            <\/script>
         ` : '';
         
         return `
@@ -239,10 +212,10 @@ class ReceiptPrinter {
         
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 12pt;
-            line-height: 1.3;
+            font-size: 10pt;
+            line-height: 1.1;
             width: 72mm;
-            padding: 3mm;
+            padding: 2mm;
             color: black;
             background: white;
         }
@@ -251,170 +224,123 @@ class ReceiptPrinter {
             text-align: center;
         }
         
-        .logo {
-            font-size: 28pt;
-            margin: 2mm 0;
-        }
-        
-        h1 {
-            font-size: 16pt;
+        .header {
+            font-size: 14pt;
             font-weight: bold;
-            margin: 1mm 0;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
         
         .subtitle {
-            font-size: 10pt;
-            margin: 1mm 0 3mm 0;
+            font-size: 8pt;
+            margin-bottom: 1mm;
         }
         
         .divider {
-            font-size: 10pt;
+            font-size: 8pt;
             letter-spacing: -1px;
-            margin: 2mm 0;
+            margin: 1mm 0;
         }
         
         .player-name {
-            font-size: 14pt;
+            font-size: 11pt;
             font-weight: bold;
-            margin: 2mm 0;
-            padding: 2mm;
+            margin: 1mm 0;
+            padding: 1mm;
             border: 1px dashed black;
         }
         
         .congrats {
-            font-size: 14pt;
-            font-weight: bold;
-            margin: 3mm 0 1mm 0;
-        }
-        
-        .message {
             font-size: 11pt;
-            margin: 1mm 0 3mm 0;
+            font-weight: bold;
+            margin: 1mm 0;
         }
         
         .time-label {
-            font-size: 11pt;
-            margin: 2mm 0 1mm 0;
+            font-size: 9pt;
+            margin-top: 1mm;
         }
         
         .time {
-            font-size: 24pt;
+            font-size: 20pt;
             font-weight: bold;
-            letter-spacing: 3px;
-            margin: 2mm 0;
+            letter-spacing: 2px;
         }
         
-        .date {
-            font-size: 10pt;
+        .barcode-section {
             margin: 1mm 0;
         }
         
-        .qr-section {
-            margin: 3mm 0;
-        }
-        
-        .qr-label {
-            font-size: 10pt;
+        .barcode-label {
+            font-size: 8pt;
             font-weight: bold;
-            margin: 2mm 0;
         }
         
-        .qr-code {
-            width: 40mm;
-            height: 40mm;
-            margin: 2mm auto;
+        #barcode {
+            width: 55mm;
+            height: auto;
+            margin: 1mm auto;
             display: block;
         }
         
-        .qr-hint {
-            font-size: 9pt;
-            font-style: italic;
-            margin: 1mm 0;
+        .barcode-data {
+            font-size: 7pt;
+            font-family: monospace;
         }
         
         .joke-section {
-            margin: 4mm 0;
-            padding: 2mm;
+            margin: 1mm 0;
+            padding: 1mm;
             border: 1px dashed black;
         }
         
         .joke-header {
-            font-size: 9pt;
+            font-size: 8pt;
             font-weight: bold;
-            margin-bottom: 2mm;
         }
         
-        .joke-question {
-            font-size: 9pt;
-            font-style: italic;
-            margin: 1mm 0;
-        }
-        
-        .joke-answer {
-            font-size: 9pt;
-            font-weight: bold;
-            margin: 1mm 0;
+        .joke-question, .joke-answer {
+            font-size: 8pt;
         }
         
         .footer {
-            margin-top: 4mm;
+            margin-top: 1mm;
         }
         
         .thanks {
-            font-size: 10pt;
-            margin: 2mm 0;
+            font-size: 9pt;
         }
         
         .holiday {
-            font-size: 12pt;
-            font-weight: bold;
-            margin: 2mm 0;
-        }
-        
-        .trees {
             font-size: 10pt;
-            letter-spacing: 2px;
-            margin: 3mm 0;
+            font-weight: bold;
         }
         
         .spacer {
-            height: 10mm;
+            height: 5mm;
         }
     </style>
 </head>
 <body>
     <div class="receipt">
-        <div class="logo">&#9733;</div>
-        <h1>SANTA SAYS</h1>
+        <div class="header">SANTA SAYS</div>
         <div class="subtitle">THE DOOM EDITION</div>
         <div class="divider">************************</div>
-        
         ${playerNameSection}
-        
-        <div class="congrats">CONGRATULATIONS!</div>
-        <div class="message">You found Santa's Sack!</div>
-        
+        <div class="congrats">YOU MADE IT!</div>
         <div class="divider">------------------------</div>
-        
-        <div class="time-label">YOUR TIME:</div>
+        <div class="time-label">TIME:</div>
         <div class="time">${timeStr}</div>
-        
-        ${qrSection}
-        
+        ${barcodeSection}
         <div class="joke-section">
-            <div class="joke-header">CHRISTMAS CRACKER JOKE:</div>
+            <div class="joke-header">CRACKER JOKE:</div>
             <div class="joke-question">Q: ${this.escapeHtml(joke.q)}</div>
             <div class="joke-answer">A: ${this.escapeHtml(joke.a)}</div>
         </div>
-        
         <div class="footer">
             <div class="divider">************************</div>
-            <div class="thanks">Thank you for playing!</div>
+            <div class="thanks">Thanks for playing!</div>
             <div class="holiday">Happy Holidays!</div>
-            <div class="trees">* * * * * * * *</div>
         </div>
-        
         <div class="spacer"></div>
     </div>
 </body>
@@ -448,7 +374,7 @@ class ReceiptPrinter {
                 frameDoc.write(receiptHTML);
                 frameDoc.close();
                 
-                // Wait for content to load (including QR code image), then print
+                // Wait for content to load (including barcode library and rendering), then print
                 setTimeout(() => {
                     try {
                         this.printFrame.contentWindow.focus();
@@ -459,7 +385,7 @@ class ReceiptPrinter {
                     } catch (e) {
                         reject(new Error('Failed to open print dialog: ' + e.message));
                     }
-                }, 500); // Increased timeout to allow QR code to render
+                }, 1000); // Increased timeout to allow barcode library to load and render
                 
             } catch (error) {
                 reject(error);
