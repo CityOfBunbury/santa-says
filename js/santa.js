@@ -19,14 +19,19 @@
 class SantaController {
     /**
      * Initialize Santa's command system
+     * @param {boolean} hardMode - Whether hard mode is enabled (includes Simon Says traps)
      */
-    constructor() {
+    constructor(hardMode = false) {
         // DOM Elements
         /** @type {HTMLElement} Speech bubble element */
         this.speechBubble = document.getElementById('speech-bubble');
         
         /** @type {HTMLElement} Command text element */
         this.commandText = document.getElementById('santa-command');
+        
+        // Hard mode setting
+        /** @type {boolean} Hard mode includes "Simon Says" traps */
+        this.hardMode = hardMode;
         
         // Direction keywords - phrases Santa uses for each direction
         /** @type {Object} Maps directions to display text */
@@ -53,8 +58,11 @@ class SantaController {
         /** @type {string|null} The correct direction to advance in the maze */
         this.correctDirection = null;
         
-        /** @type {boolean} Whether current command includes "Santa Says" */
+        /** @type {boolean} Whether current command includes "Santa Says" (valid to move) */
         this.isSantaSays = true;
+        
+        /** @type {boolean} Whether current command is a "Simon Says" trap (hard mode only) */
+        this.isSimonSays = false;
         
         /** @type {boolean} Whether current command is urgent (repeat) */
         this.isUrgent = false;
@@ -74,6 +82,10 @@ class SantaController {
         // Probability of non-"Santa Says" command (trap)
         /** @type {number} Chance of trick command (0-1) - 40% chance of a trick */
         this.trickProbability = 0.40;
+        
+        // Probability of "Simon Says" in hard mode (among tricks)
+        /** @type {number} Chance of Simon Says trap in hard mode (0-1) - 30% */
+        this.simonSaysProbability = 0.30;
         
         // Track recent commands to avoid too many tricks in a row
         /** @type {number} Count of consecutive tricks */
@@ -107,6 +119,9 @@ class SantaController {
         // Store the correct direction for validation
         this.correctDirection = correctMove;
         
+        // Reset Simon Says state
+        this.isSimonSays = false;
+        
         // Decide if this is a "Santa Says" command or a trick
         // But prevent too many consecutive tricks
         let isSantaSays;
@@ -125,10 +140,20 @@ class SantaController {
             this.consecutiveTricks = 0;
         }
         
+        // In hard mode, some tricks become "Simon Says" traps
+        let isSimonSaysTrap = false;
+        if (this.hardMode && !isSantaSays) {
+            isSimonSaysTrap = Math.random() < this.simonSaysProbability;
+            this.isSimonSays = isSimonSaysTrap;
+        }
+        
         // Determine which direction Santa will command
         let direction;
         if (isSantaSays) {
             // Santa says the CORRECT direction - player should move this way
+            direction = correctMove;
+        } else if (isSimonSaysTrap) {
+            // Simon Says trap - always use the correct direction to be extra tempting!
             direction = correctMove;
         } else {
             // Trick! Santa says a direction without "Santa says"
@@ -165,6 +190,10 @@ class SantaController {
         if (isSantaSays) {
             // Real command - always has "Santa says"
             commandHTML = `<span class="santa-says">🎅 Santa says...</span><span class="direction">${phrase}!</span>`;
+        } else if (isSimonSaysTrap) {
+            // HARD MODE: Simon Says trap - looks exactly like Santa Says but ISN'T!
+            // Player should NOT move when Simon says
+            commandHTML = `<span class="santa-says simon-says">🎅 Simon says...</span><span class="direction">${phrase}!</span>`;
         } else {
             // Trick command - no "Santa says", but sometimes add urgency to tempt players
             const trickPhrases = [
@@ -176,14 +205,14 @@ class SantaController {
             commandHTML = trickPhrases[Math.floor(Math.random() * trickPhrases.length)];
         }
         
-        // Display the command (mark as trick if not Santa-says)
-        this.showSpeechBubble(commandHTML, false, !isSantaSays);
+        // Display the command (mark as trick if not Santa-says, special style for Simon says)
+        this.showSpeechBubble(commandHTML, false, !isSantaSays, isSimonSaysTrap);
         
         // Set up urgency escalation (only if Santa says - otherwise wait for timeout)
         if (isSantaSays) {
             this.setupUrgencyEscalation(direction, phrase);
         } else {
-            // For non-Santa Says, set a timeout - player should NOT move
+            // For non-Santa Says (including Simon Says), set a timeout - player should NOT move
             this.urgencyTimeout = setTimeout(() => {
                 if (this.onTimeout) {
                     this.onTimeout('patience');
@@ -193,19 +222,21 @@ class SantaController {
         
         // Notify callback
         if (this.onCommand) {
-            this.onCommand({ direction, isSantaSays, correctMove });
+            this.onCommand({ direction, isSantaSays, correctMove, isSimonSays: isSimonSaysTrap });
         }
         
         console.log('Santa command generated:', {
             direction,
             correctMove,
             isSantaSays,
+            isSimonSays: isSimonSaysTrap,
             isTrick: !isSantaSays,
+            hardMode: this.hardMode,
             consecutiveTricks: this.consecutiveTricks,
             shouldPlayerMove: isSantaSays
         });
         
-        return { direction, isSantaSays, isCorrectPath: direction === correctMove };
+        return { direction, isSantaSays, isCorrectPath: direction === correctMove, isSimonSays: isSimonSaysTrap };
     }
     
     /**
@@ -253,21 +284,26 @@ class SantaController {
      * @param {string} html - HTML content for the bubble
      * @param {boolean} urgent - Whether to show urgent styling
      * @param {boolean} isTrick - Whether this is a non-Santa-says trick
+     * @param {boolean} isSimonSays - Whether this is a Simon Says trap (hard mode)
      */
-    showSpeechBubble(html, urgent = false, isTrick = false) {
+    showSpeechBubble(html, urgent = false, isTrick = false, isSimonSays = false) {
         this.commandText.innerHTML = html;
         this.speechBubble.classList.remove('hidden');
         this.speechBubble.classList.add('visible');
         
         // Remove all modifier classes first
-        this.speechBubble.classList.remove('urgent', 'trick');
+        this.speechBubble.classList.remove('urgent', 'trick', 'simon-says');
         
         if (urgent) {
             this.speechBubble.classList.add('urgent');
         }
         
-        if (isTrick) {
+        if (isTrick && !isSimonSays) {
             this.speechBubble.classList.add('trick');
+        }
+        
+        if (isSimonSays) {
+            this.speechBubble.classList.add('simon-says');
         }
     }
     
@@ -295,7 +331,8 @@ class SantaController {
      * 
      * Validation rules:
      * 1. If Santa didn't say → ANY movement is wrong (trap: "Santa didn't say!")
-     * 2. If Santa said → player must move in the CORRECT direction (the maze solution)
+     * 2. If Simon says (hard mode) → ANY movement is wrong (trap: "Simon said, not Santa!")
+     * 3. If Santa said → player must move in the CORRECT direction (the maze solution)
      *    - Correct direction → valid, advance through maze
      *    - Wrong direction → invalid (trap: "Wrong way!")
      * 
@@ -305,7 +342,17 @@ class SantaController {
     validateMove(playerDirection) {
         this.clearUrgency();
         
-        // Rule 1: If it's NOT a "Santa Says" command, ANY move is wrong
+        // Rule 1: If it's a "Simon Says" trap (hard mode), ANY move is wrong
+        if (this.isSimonSays) {
+            console.log('Validation failed: Simon said, not Santa! Player should not have moved.');
+            return {
+                valid: false,
+                reason: 'simon_says',
+                message: "SIMON SAID, NOT SANTA!"
+            };
+        }
+        
+        // Rule 2: If it's NOT a "Santa Says" command, ANY move is wrong
         // The player should have stayed still!
         if (!this.isSantaSays) {
             console.log('Validation failed: Santa did not say, but player moved');
@@ -316,7 +363,7 @@ class SantaController {
             };
         }
         
-        // Rule 2: Santa said, so player should move
+        // Rule 3: Santa said, so player should move
         // Check if they moved in the CORRECT direction (the maze solution path)
         if (playerDirection === this.correctDirection) {
             console.log('Validation passed: Player moved in correct direction');
@@ -374,6 +421,7 @@ class SantaController {
         this.currentDirection = null;
         this.correctDirection = null;
         this.isSantaSays = true;
+        this.isSimonSays = false;
         this.isUrgent = false;
         this.consecutiveTricks = 0;
         this.hideSpeechBubble();

@@ -21,6 +21,30 @@ class ReceiptPrinter {
         this.nameAttributeId = 'b6b61b7f-64ec-4fb0-9e01-d206614d585c';
         this.timeAttributeId = '019b020b-ca47-7ff3-a60f-fabd2b17690c';
         
+        // Christmas cracker jokes
+        this.crackerJokes = [
+            { q: "What do elves learn in school?", a: "The elf-abet!" },
+            { q: "What do you call a broke Santa?", a: "Saint Nickel-less!" },
+            { q: "Why was the snowman looking through carrots?", a: "He was picking his nose!" },
+            { q: "What do snowmen eat for breakfast?", a: "Frosted Flakes!" },
+            { q: "What's every parent's favorite Christmas carol?", a: "Silent Night!" },
+            { q: "What do you get if you cross Santa with a duck?", a: "A Christmas quacker!" },
+            { q: "Why does Santa go down chimneys?", a: "Because it soots him!" },
+            { q: "What do you call an obnoxious reindeer?", a: "Rude-olph!" },
+            { q: "What do snowmen wear on their heads?", a: "Ice caps!" },
+            { q: "Why is Christmas just like a day at the office?", a: "You do all the work and the fat guy in the suit gets all the credit!" },
+            { q: "What's the best thing to put into Christmas cake?", a: "Your teeth!" },
+            { q: "What did the stamp say to the Christmas card?", a: "Stick with me and we'll go places!" },
+            { q: "Why did the turkey join the band?", a: "Because it had the drumsticks!" },
+            { q: "What carol is heard in the desert?", a: "O Camel Ye Faithful!" },
+            { q: "What do reindeer hang on their Christmas trees?", a: "Horn-aments!" },
+            { q: "What do you call a cat on the beach at Christmas?", a: "Sandy Claws!" },
+            { q: "Why are Christmas trees so bad at sewing?", a: "They always drop their needles!" },
+            { q: "What did Adam say the day before Christmas?", a: "It's Christmas, Eve!" },
+            { q: "How does Christmas Day end?", a: "With the letter Y!" },
+            { q: "What do you call people who are afraid of Santa?", a: "Claustrophobic!" }
+        ];
+        
         // Create hidden iframe for printing
         this.printFrame = null;
         this.createPrintFrame();
@@ -86,6 +110,14 @@ class ReceiptPrinter {
         this.printerName = '';
         this.isConnected = false;
         localStorage.removeItem('receiptPrinterName');
+    }
+    
+    /**
+     * Get a random Christmas cracker joke
+     * @returns {Object} Joke object with q (question) and a (answer) properties
+     */
+    getRandomJoke() {
+        return this.crackerJokes[Math.floor(Math.random() * this.crackerJokes.length)];
     }
     
     /**
@@ -168,6 +200,9 @@ class ReceiptPrinter {
         // Generate leaderboard URL and QR code
         const leaderboardUrl = this.generateLeaderboardUrl(playerName, timeElapsed);
         const qrCodeDataUrl = this.generateQRCode(leaderboardUrl);
+        
+        // Get a random Christmas cracker joke
+        const joke = this.getRandomJoke();
         
         // Player name section (only show if name provided)
         const playerNameSection = playerName ? `
@@ -298,6 +333,30 @@ class ReceiptPrinter {
             margin: 1mm 0;
         }
         
+        .joke-section {
+            margin: 4mm 0;
+            padding: 2mm;
+            border: 1px dashed black;
+        }
+        
+        .joke-header {
+            font-size: 9pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
+        }
+        
+        .joke-question {
+            font-size: 9pt;
+            font-style: italic;
+            margin: 1mm 0;
+        }
+        
+        .joke-answer {
+            font-size: 9pt;
+            font-weight: bold;
+            margin: 1mm 0;
+        }
+        
         .footer {
             margin-top: 4mm;
         }
@@ -341,9 +400,13 @@ class ReceiptPrinter {
         <div class="time-label">YOUR TIME:</div>
         <div class="time">${timeStr}</div>
         
-        <div class="divider">------------------------</div>
-        
         ${qrSection}
+        
+        <div class="joke-section">
+            <div class="joke-header">CHRISTMAS CRACKER JOKE:</div>
+            <div class="joke-question">Q: ${this.escapeHtml(joke.q)}</div>
+            <div class="joke-answer">A: ${this.escapeHtml(joke.a)}</div>
+        </div>
         
         <div class="footer">
             <div class="divider">************************</div>

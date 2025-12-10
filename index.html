@@ -17,9 +17,7 @@
             <h1 class="game-title">🎅 SANTA SAYS 🎅</h1>
             <h2 class="subtitle">THE DOOM EDITION</h2>
             <div class="instructions">
-                <p>Navigate the Christmas maze!</p>
-                <p>Only move when <span class="highlight">SANTA SAYS</span>!</p>
-                <p>Follow Santa's directions to find his Sack!</p>
+                <p>Navigate the maze - only move when <span class="highlight">SANTA SAYS</span>!</p>
                 <p class="warning">⚠️ Wrong moves trigger TRAPS! ⚠️</p>
             </div>
             
@@ -27,6 +25,15 @@
             <div id="player-name-section">
                 <label for="player-name" class="name-label">Enter your name for the leaderboard:</label>
                 <input type="text" id="player-name" class="name-input" placeholder="Your Name (optional)" maxlength="30">
+            </div>
+            
+            <!-- Difficulty Toggle -->
+            <div id="difficulty-section">
+                <label class="difficulty-toggle">
+                    <input type="checkbox" id="hard-mode-toggle">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Hard Mode</span>
+                </label>
             </div>
             
             <button id="start-btn" class="start-button">START GAME</button>
@@ -131,9 +138,6 @@
     <div id="win-screen" class="screen hidden">
         <div class="win-content">
             <h1>🎄 YOU MADE IT! 🎄</h1>
-            <div id="sack-animation">
-                <div class="pixel-sack"></div>
-            </div>
             <p class="win-text">You found Santa's Sack!</p>
             <div id="final-time-container">
                 <p class="time-label">Your Time:</p>

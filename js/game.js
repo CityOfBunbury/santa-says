@@ -369,6 +369,9 @@ class Game {
         /** @type {string} Player name for leaderboard */
         this.playerName = '';
         
+        /** @type {boolean} Hard mode enabled (includes Simon Says) */
+        this.hardMode = false;
+        
         // Player State (for raycaster)
         /** @type {Object} Player position and direction */
         this.player = {
@@ -570,9 +573,13 @@ class Game {
         const nameInput = document.getElementById('player-name');
         this.playerName = nameInput ? nameInput.value.trim() : '';
         
+        // Capture hard mode setting
+        const hardModeToggle = document.getElementById('hard-mode-toggle');
+        this.hardMode = hardModeToggle ? hardModeToggle.checked : false;
+        
         // Initialize components
         this.raycaster = new Raycaster(this.canvas);
-        this.santa = new SantaController();
+        this.santa = new SantaController(this.hardMode);
         
         // Set up Santa callbacks
         this.santa.setTimeoutCallback((reason) => this.handleTimeout(reason));
@@ -832,6 +839,8 @@ class Game {
         let displayMessage = message;
         if (reason === 'didnt_say') {
             displayMessage = "SANTA DIDN'T SAY!";
+        } else if (reason === 'simon_says') {
+            displayMessage = "SIMON SAID, NOT SANTA!";
         } else if (reason === 'wrong_direction') {
             displayMessage = "WRONG WAY!";
         } else if (reason === 'timeout') {
@@ -861,9 +870,8 @@ class Game {
      * Resets player to the first waypoint of the predefined path
      */
     resetToStart() {
-        // Reset state
+        // Reset state (timer continues from where it was - don't reset timeElapsed)
         this.pathIndex = 0;
-        this.timeElapsed = 0;
         this.isPlaying = true;
         
         // Reset player position to the start waypoint
@@ -874,11 +882,10 @@ class Game {
             angle: startWaypoint.facing     // Use the waypoint's facing direction
         };
         
-        // Reset UI
-        this.updateTimerDisplay();
+        // Reset Santa's commands
         this.santa.reset();
         
-        // Restart timer
+        // Restart timer (continues from current time, not reset to 0)
         this.startTimer();
         
         // Give new command
@@ -999,8 +1006,7 @@ class Game {
      */
     restartGame() {
         this.winScreen.classList.add('hidden');
-        this.generateMaze();
-        this.startGame();
+        this.startScreen.classList.remove('hidden');
     }
     
     /**

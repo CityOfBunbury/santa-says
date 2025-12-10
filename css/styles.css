@@ -66,6 +66,7 @@ body {
 .screen.hidden {
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
 }
 
 /* ============================================
@@ -316,6 +317,67 @@ body {
     font-style: italic;
 }
 
+/* Difficulty Toggle Section */
+#difficulty-section {
+    margin: 20px 0;
+}
+
+.difficulty-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.difficulty-toggle input {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 60px;
+    height: 32px;
+    background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+    border: 2px solid #555;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(180deg, #888 0%, #666 100%);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.difficulty-toggle input:checked + .toggle-slider {
+    background: linear-gradient(180deg, var(--christmas-red-light) 0%, var(--christmas-red) 100%);
+    border-color: var(--gold);
+}
+
+.difficulty-toggle input:checked + .toggle-slider::before {
+    transform: translateX(28px);
+    background: linear-gradient(180deg, var(--gold) 0%, #FFA500 100%);
+}
+
+.toggle-label {
+    font-family: var(--font-festive);
+    font-size: 1.1rem;
+    color: #aaa;
+    transition: color 0.3s ease;
+}
+
+.difficulty-toggle input:checked ~ .toggle-label {
+    color: var(--gold);
+}
+
 /* ============================================
    GAME SCREEN LAYOUT
    ============================================ */
@@ -486,6 +548,16 @@ body {
 #speech-bubble.trick {
     background: #fffef0;
     border: 2px dashed #cc9900;
+}
+
+/* Simon Says trap (hard mode) - same styling as Santa Says to be tricky! */
+#speech-bubble.simon-says {
+    /* Same as default speech bubble - no visual difference */
+}
+
+#speech-bubble .simon-says {
+    /* Same color as Santa Says to make it harder to spot */
+    color: var(--christmas-red);
 }
 
 @keyframes urgentShake {
@@ -710,6 +782,9 @@ body {
     animation: sackBounce 1s ease-in-out infinite;
     display: flex;
     justify-content: center;
+    overflow: visible;
+    height: 180px;
+    position: relative;
 }
 
 @keyframes sackBounce {
@@ -722,8 +797,13 @@ body {
     width: 8px;
     height: 8px;
     background: transparent;
-    transform: scale(5);
-    margin: 40px auto;
+    transform: scale(3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    margin-left: -60px;
+    margin-top: -80px;
     /* Each shadow is a "pixel" - 16x20 grid */
     box-shadow:
         /* Row 0 - Gold bow top */
